@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Three Little Ducks | Database Consulting</title>
+<meta name="description" content="Three Little Ducks Database Consulting — administración, optimización, migración y seguridad de bases de datos para empresas.">
+<link rel="icon" type="image/png" href="pictures/duck-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header" id="header">
+  <div class="container header-inner">
+    <a href="#top" class="brand">
+      <img src="pictures/duck-logo.png" alt="Three Little Ducks logo" class="brand-logo">
+      <span class="brand-text">
+        <strong>Three Little Ducks</strong>
+        <small>Database Consulting</small>
+      </span>
+    </a>
+
+    <nav class="main-nav" id="main-nav">
+      <a href="#servicios">Servicios</a>
+      <a href="#nosotros">Nosotros</a>
+      <a href="#proceso">Proceso</a>
+      <a href="#equipo">Equipo</a>
+      <a href="#contacto" class="nav-cta">Contáctanos</a>
+    </nav>
+
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="container hero-inner">
+      <div class="hero-copy" data-reveal>
+        <p class="eyebrow">Consultoría especializada en bases de datos</p>
+        <h1>Sus datos, en manos seguras y expertas.</h1>
+        <p class="hero-lead">
+          Ayudamos a las empresas a administrar, optimizar y proteger sus bases de datos
+          con soluciones confiables, escalables y adaptadas a cada negocio.
+        </p>
+        <div class="hero-actions">
+          <a href="#contacto" class="btn btn-primary">Solicitar una consulta</a>
+          <a href="#servicios" class="btn btn-ghost">Ver servicios</a>
+        </div>
+        <ul class="hero-stats">
+          <li><strong>+99.9%</strong><span>Disponibilidad garantizada</span></li>
+          <li><strong>24/7</strong><span>Monitoreo continuo</span></li>
+          <li><strong>3</strong><span>Consultores especializados</span></li>
+        </ul>
+      </div>
+      <div class="hero-visual" data-reveal>
+        <div class="hero-card">
+          <img src="pictures/duck-logo.png" alt="Three Little Ducks" class="hero-logo">
+        </div>
+        <ul class="hero-triad">
+          <li>Confidencialidad</li>
+          <li>Integridad</li>
+          <li>Disponibilidad</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TRUST STRIP ===== -->
+  <section class="trust-strip">
+    <div class="container trust-inner">
+      <span>Administración</span>
+      <span>Optimización</span>
+      <span>Migración</span>
+      <span>Seguridad</span>
+      <span>Respaldo &amp; Recuperación</span>
+      <span>DevOps de Datos</span>
+    </div>
+  </section>
+
+  <!-- ===== SERVICIOS ===== -->
+  <section class="section" id="servicios">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <p class="eyebrow">Qué hacemos</p>
+        <h2>Soluciones integrales para la gestión de sus bases de datos</h2>
+        <p class="section-lead">
+          Cubrimos todo el ciclo de vida del dato: desde el diseño y la migración hasta el
+          monitoreo, la seguridad y el cumplimiento normativo.
+        </p>
+      </div>
+
+      <div class="grid services-grid">
+
+        <article class="service-card" data-reveal>
+          <div class="service-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 3c4.97 0 9 1.34 9 3s-4.03 3-9 3-9-1.34-9-3 4.03-3 9-3zM3 8.5C3 10.16 7.03 11.5 12 11.5s9-1.34 9-3.5M3 13c0 1.66 4.03 3 9 3s9-1.34 9-3M3 17.5c0 1.66 4.03 3 9 3s9-1.34 9-3V6"/></svg>
+          </div>
+          <h3>Administración de bases de datos</h3>
+          <p>Gestión diaria (DBA), mantenimiento preventivo y soporte especializado para SQL Server, MySQL, PostgreSQL y Oracle.</p>
+        </article>
+
+        <article class="service-card" data-reveal>
+          <div class="service-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
+          </div>
+          <h3>Optimización de rendimiento</h3>
+          <p>Análisis de consultas, indexación y ajuste de configuración para reducir tiempos de respuesta y costos de infraestructura.</p>
+        </article>
+
+        <article class="service-card" data-reveal>
+          <div class="service-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14.93-4M20 12a8 8 0 0 1-14.93 4M8 4v4H4M16 20v-4h4"/></svg>
+          </div>
+          <h3>Migración y modernización</h3>
+          <p>Migración a la nube o entre motores de bases de datos, con planes de transición sin interrupciones para su operación.</p>
+        </article>
+
+        <article class="service-card" data-reveal>
+          <div class="service-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.4 8.7-8 10-4.6-1.3-8-5-8-10V6l8-4z"/></svg>
+          </div>
+          <h3>Seguridad y cumplimiento</h3>
+          <p>Auditorías de seguridad, control de accesos, cifrado de datos y acompañamiento en normativas de protección de datos.</p>
+        </article>
+
+        <article class="service-card" data-reveal>
+          <div class="service-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 2v6m0 0l3-3m-3 3L9 5M4 22v-6a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v6"/></svg>
+          </div>
+          <h3>Respaldo y recuperación</h3>
+          <p>Estrategias de backup automatizado y planes de recuperación ante desastres para minimizar el riesgo de pérdida de información.</p>
+        </article>
+
+        <article class="service-card" data-reveal>
+          <div class="service-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M9 3h6l1 3h3v3l-2 1v4l2 1v3h-3l-1 3H9l-1-3H5v-3l2-1v-4l-2-1V6h3l1-3z"/></svg>
+          </div>
+          <h3>Monitoreo continuo</h3>
+          <p>Supervisión 24/7 con alertas tempranas, reportes de salud y disponibilidad de sus sistemas críticos.</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== NOSOTROS ===== -->
+  <section class="section section-alt" id="nosotros">
+    <div class="container about-content" data-reveal>
+      <p class="eyebrow">Quiénes somos</p>
+      <h2>Un equipo pequeño, con estándares de nivel empresarial</h2>
+      <p>
+        <strong>Three Little Ducks Database Consulting</strong> nace de la convicción de que
+        toda organización, sin importar su tamaño, merece una infraestructura de datos
+        confiable, segura y bien administrada.
+      </p>
+      <p>
+        Combinamos experiencia técnica con un trato cercano y formal: entendemos su negocio,
+        diagnosticamos con precisión y entregamos soluciones sostenibles a largo plazo.
+      </p>
+      <ul class="check-list">
+        <li>Metodología clara y documentada en cada proyecto</li>
+        <li>Comunicación directa con los consultores, sin intermediarios</li>
+        <li>Soluciones adaptadas al tamaño y presupuesto de cada cliente</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== PROCESO ===== -->
+  <section class="section" id="proceso">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <p class="eyebrow">Cómo trabajamos</p>
+        <h2>Un proceso simple, transparente y medible</h2>
+      </div>
+
+      <ol class="process-grid">
+        <li class="process-step" data-reveal>
+          <span class="step-number">01</span>
+          <h3>Diagnóstico</h3>
+          <p>Evaluamos el estado actual de sus bases de datos: rendimiento, seguridad y riesgos.</p>
+        </li>
+        <li class="process-step" data-reveal>
+          <span class="step-number">02</span>
+          <h3>Plan de acción</h3>
+          <p>Diseñamos una propuesta clara con alcance, tiempos y resultados esperados.</p>
+        </li>
+        <li class="process-step" data-reveal>
+          <span class="step-number">03</span>
+          <h3>Implementación</h3>
+          <p>Ejecutamos los cambios con mínima interrupción para su operación diaria.</p>
+        </li>
+        <li class="process-step" data-reveal>
+          <span class="step-number">04</span>
+          <h3>Acompañamiento</h3>
+          <p>Damos seguimiento continuo y soporte para garantizar resultados sostenibles.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===== EQUIPO ===== -->
+  <section class="section section-alt" id="equipo">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <p class="eyebrow">Nuestro equipo</p>
+        <h2>Los consultores detrás de Three Little Ducks</h2>
+      </div>
+
+      <div class="grid team-grid">
+        <article class="team-card" data-reveal>
+          <div class="team-avatar">DJ</div>
+          <h3>David Joel Soto Zúñiga</h3>
+          <p class="team-role">Desarrollador &amp; Consultor de Bases de Datos</p>
+        </article>
+
+        <article class="team-card" data-reveal>
+          <div class="team-avatar">JE</div>
+          <h3>Jeimy Espinoza Barquero</h3>
+          <p class="team-role">Desarrolladora &amp; Consultora de Bases de Datos</p>
+        </article>
+
+        <article class="team-card" data-reveal>
+          <div class="team-avatar">GS</div>
+          <h3>Gloriana Sojo Pereira</h3>
+          <p class="team-role">Desarrolladora &amp; Consultora de Bases de Datos</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CTA ===== -->
+  <section class="cta-band" data-reveal>
+    <div class="container cta-inner">
+      <h2>¿Listo para fortalecer la infraestructura de sus datos?</h2>
+      <p>Conversemos sobre las necesidades de su base de datos y cómo podemos ayudarle.</p>
+      <a href="#contacto" class="btn btn-primary">Agendar una consulta</a>
+    </div>
+  </section>
+
+  <!-- ===== CONTACTO ===== -->
+  <section class="section" id="contacto">
+    <div class="container contact-grid">
+      <div class="contact-info" data-reveal>
+        <p class="eyebrow">Contacto</p>
+        <h2>Hablemos de su proyecto</h2>
+        <p class="section-lead">
+          Complete el formulario o escríbanos directamente. Responderemos a la brevedad
+          posible para coordinar una primera reunión sin costo.
+        </p>
+
+        <ul class="contact-list">
+          <li>
+            <span class="contact-label">Correo</span>
+            <span>contacto@threelittleducks.com</span>
+          </li>
+          <li>
+            <span class="contact-label">Ubicación</span>
+            <span>Costa Rica — Atención remota e híbrida</span>
+          </li>
+          <li>
+            <span class="contact-label">Horario</span>
+            <span>Lunes a viernes, 8:00 a.m. – 5:00 p.m.</span>
+          </li>
+        </ul>
+      </div>
+
+      <form class="contact-form" id="contactForm" data-reveal novalidate>
+        <div class="form-row">
+          <label for="name">Nombre completo</label>
+          <input type="text" id="name" name="name" required placeholder="Su nombre">
+        </div>
+        <div class="form-row">
+          <label for="email">Correo electrónico</label>
+          <input type="email" id="email" name="email" required placeholder="nombre@empresa.com">
+        </div>
+        <div class="form-row">
+          <label for="company">Empresa</label>
+          <input type="text" id="company" name="company" placeholder="Nombre de su empresa (opcional)">
+        </div>
+        <div class="form-row">
+          <label for="message">Mensaje</label>
+          <textarea id="message" name="message" rows="4" required placeholder="Cuéntenos sobre su proyecto o necesidad"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Enviar mensaje</button>
+        <p class="form-note" id="formNote" role="status"></p>
+      </form>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <a href="#top" class="brand brand-footer">
+      <span class="brand-text">
+        <strong>Three Little Ducks</strong>
+        <small>Database Consulting</small>
+      </span>
+    </a>
+
+    <nav class="footer-nav">
+      <a href="#servicios">Servicios</a>
+      <a href="#nosotros">Nosotros</a>
+      <a href="#equipo">Equipo</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+
+    <p class="footer-copy">&copy; <span id="year"></span> Three Little Ducks Database Consulting. Todos los derechos reservados.</p>
+  </div>
+</footer>
+
+<button class="scroll-top" id="scrollTop" aria-label="Volver arriba">↑</button>
+
+<script src="js/main.js"></script>
+</body>
+</html>
