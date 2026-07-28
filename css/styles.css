@@ -887,3 +887,69 @@ p {
     gap: 24px;
   }
 }
+
+.iso-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  border: 1px solid var(--gray-300);
+  box-shadow: var(--shadow-md);
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.iso-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.iso-table th, 
+.iso-table td {
+  padding: 14px 10px;
+  border: 1px solid var(--gray-300);
+  text-align: center;
+}
+
+.iso-table th {
+  background: var(--navy-900);
+  color: var(--white);
+  font-family: var(--font-heading);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+}
+
+.iso-table th small {
+  color: var(--gold);
+}
+
+.iso-table td.text-left {
+  text-align: left;
+  font-weight: 500;
+}
+
+.iso-table code {
+  background: var(--gray-100);
+  color: var(--navy-700);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  border: 1px solid var(--gray-300);
+}
+
+.iso-select {
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-300);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  background: var(--white);
+}
+
+.iso-actions {
+  margin-top: 24px;
+  text-align: right;
+}
