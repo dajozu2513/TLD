@@ -29,6 +29,7 @@
       <a href="#nosotros">Nosotros</a>
       <a href="#proceso">Proceso</a>
       <a href="#equipo">Equipo</a>
+      <a href="#evaluacion">Evaluación ISO</a>
       <a href="#contacto" class="nav-cta">Contáctanos</a>
     </nav>
 
@@ -250,6 +251,116 @@
       <a href="#contacto" class="btn btn-primary">Agendar una consulta</a>
     </div>
   </section>
+
+  <!-- ===== EVALUACIÓN ISO / COBIT ===== -->
+<section class="section section-alt" id="evaluacion">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <p class="eyebrow">Gobierno TI &amp; Auditoría</p>
+      <h2>Matriz de Evaluación de Riesgos (ISO 27001 / 27002)</h2>
+      <p class="section-lead">
+        Evaluación de controles de seguridad de la información, nivel de madurez COBIT y vinculación con Stored Procedures en Oracle Database.
+      </p>
+    </div>
+
+    <form id="isoForm" class="iso-card" data-reveal>
+      <div class="table-responsive">
+        <table class="iso-table">
+          <thead>
+            <tr>
+              <th rowspan="2">Numeral ISO</th>
+              <th rowspan="2" class="text-left">Control ("Lo que debe tener")</th>
+              <th colspan="3">Tríada CID</th>
+              <th rowspan="2">Madurez<br><small>(0 a 5)</small></th>
+              <th colspan="2">Cumple</th>
+              <th rowspan="2">Procedimiento Almacenado (Oracle)</th>
+            </tr>
+            <tr>
+              <th>I</th>
+              <th>C</th>
+              <th>D</th>
+              <th>S</th>
+              <th>N</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Control 1 -->
+            <tr>
+              <td><strong>1 - A.9.2.1</strong></td>
+              <td class="text-left">Gestión de registro y baja de usuarios en la Base de Datos</td>
+              <td><input type="checkbox" name="c1_i" checked></td>
+              <td><input type="checkbox" name="c1_c" checked></td>
+              <td><input type="checkbox" name="c1_d"></td>
+              <td>
+                <select name="c1_madurez" class="iso-select">
+                  <option value="0">0 - Inexistente</option>
+                  <option value="1">1 - Inicial</option>
+                  <option value="2">2 - Repetible</option>
+                  <option value="3" selected>3 - Definido</option>
+                  <option value="4">4 - Administrado</option>
+                  <option value="5">5 - Optimizado</option>
+                </select>
+              </td>
+              <td><input type="radio" name="c1_cumple" value="S" checked></td>
+              <td><input type="radio" name="c1_cumple" value="N"></td>
+              <td><code>PR1 (sp_auditar_acceso)</code></td>
+            </tr>
+
+            <!-- Control 2 -->
+            <tr>
+              <td><strong>2 - A.12.3.1</strong></td>
+              <td class="text-left">Respaldos de información automatizados (Backups periódicos)</td>
+              <td><input type="checkbox" name="c2_i" checked></td>
+              <td><input type="checkbox" name="c2_c"></td>
+              <td><input type="checkbox" name="c2_d" checked></td>
+              <td>
+                <select name="c2_madurez" class="iso-select">
+                  <option value="0">0 - Inexistente</option>
+                  <option value="1">1 - Inicial</option>
+                  <option value="2">2 - Repetible</option>
+                  <option value="3">3 - Definido</option>
+                  <option value="4" selected>4 - Administrado</option>
+                  <option value="5">5 - Optimizado</option>
+                </select>
+              </td>
+              <td><input type="radio" name="c2_cumple" value="S" checked></td>
+              <td><input type="radio" name="c2_cumple" value="N"></td>
+              <td><code>PR2 (sp_respaldo_bd)</code></td>
+            </tr>
+
+            <!-- Control 3 -->
+            <tr>
+              <td><strong>3 - A.12.4.1</strong></td>
+              <td class="text-left">Registro de eventos y trazabilidad en bitácoras (Logs de auditoría)</td>
+              <td><input type="checkbox" name="c3_i" checked></td>
+              <td><input type="checkbox" name="c3_c" checked></td>
+              <td><input type="checkbox" name="c3_d"></td>
+              <td>
+                <select name="c3_madurez" class="iso-select">
+                  <option value="0">0 - Inexistente</option>
+                  <option value="1" selected>1 - Inicial</option>
+                  <option value="2">2 - Repetible</option>
+                  <option value="3">3 - Definido</option>
+                  <option value="4">4 - Administrado</option>
+                  <option value="5">5 - Optimizado</option>
+                </select>
+              </td>
+              <td><input type="radio" name="c3_cumple" value="S"></td>
+              <td><input type="radio" name="c3_cumple" value="N" checked></td>
+              <td><code>PR3 (sp_registrar_log)</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="iso-actions">
+        <button type="button" class="btn btn-primary" onclick="alert('Evaluación lista para enviar a Oracle Database mediante Apache/PHP')">
+          Guardar Evaluación
+        </button>
+      </div>
+    </form>
+  </div>
+</section>
 
   <!-- ===== CONTACTO ===== -->
   <section class="section" id="contacto">
