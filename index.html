@@ -263,21 +263,21 @@
       </p>
     </div>
 
-    <form id="isoForm" class="iso-card" data-reveal>
+   <form id="isoForm" class="iso-card" data-reveal>
       <div class="table-responsive">
         <table class="iso-table">
           <thead>
             <tr>
-              <th rowspan="2">Numeral ISO</th>
-              <th rowspan="2" class="text-left">Control ("Lo que debe tener")</th>
+              <th rowspan="2">Numeral ISO 27001</th>
+              <th rowspan="2" class="text-left">Control Técnico de Base de Datos ("Lo que debe tener")</th>
               <th colspan="3">Tríada CID</th>
-              <th rowspan="2">Madurez<br><small>(0 a 5)</small></th>
+              <th rowspan="2">Madurez COBIT<br><small>(0 a 5)</small></th>
               <th colspan="2">Cumple</th>
-              <th rowspan="2">Procedimiento Almacenado (Oracle)</th>
+              <th rowspan="2">Procedimiento Almacenado (Oracle PL/SQL)</th>
             </tr>
             <tr>
-              <th>I</th>
               <th>C</th>
+              <th>I</th>
               <th>D</th>
               <th>S</th>
               <th>N</th>
@@ -286,10 +286,10 @@
           <tbody>
             <!-- Control 1 -->
             <tr>
-              <td><strong>1 - A.9.2.1</strong></td>
-              <td class="text-left">Gestión de registro y baja de usuarios en la Base de Datos</td>
-              <td><input type="checkbox" name="c1_i" checked></td>
+              <td><strong>A.5.15</strong></td>
+              <td class="text-left">Gestión de registro, autenticación y baja de usuarios en el SGBD</td>
               <td><input type="checkbox" name="c1_c" checked></td>
+              <td><input type="checkbox" name="c1_i" checked></td>
               <td><input type="checkbox" name="c1_d"></td>
               <td>
                 <select name="c1_madurez" class="iso-select">
@@ -303,37 +303,37 @@
               </td>
               <td><input type="radio" name="c1_cumple" value="S" checked></td>
               <td><input type="radio" name="c1_cumple" value="N"></td>
-              <td><code>PR1 (sp_auditar_acceso)</code></td>
+              <td><code>PR1 (sp_gestion_usuarios)</code></td>
             </tr>
 
             <!-- Control 2 -->
             <tr>
-              <td><strong>2 - A.12.3.1</strong></td>
-              <td class="text-left">Respaldos de información automatizados (Backups periódicos)</td>
+              <td><strong>A.8.18</strong></td>
+              <td class="text-left">Privilegios mínimos y asignación de roles administrativos en la BD</td>
+              <td><input type="checkbox" name="c2_c" checked></td>
               <td><input type="checkbox" name="c2_i" checked></td>
-              <td><input type="checkbox" name="c2_c"></td>
-              <td><input type="checkbox" name="c2_d" checked></td>
+              <td><input type="checkbox" name="c2_d"></td>
               <td>
                 <select name="c2_madurez" class="iso-select">
                   <option value="0">0 - Inexistente</option>
                   <option value="1">1 - Inicial</option>
                   <option value="2">2 - Repetible</option>
-                  <option value="3">3 - Definido</option>
-                  <option value="4" selected>4 - Administrado</option>
+                  <option value="3" selected>3 - Definido</option>
+                  <option value="4">4 - Administrado</option>
                   <option value="5">5 - Optimizado</option>
                 </select>
               </td>
               <td><input type="radio" name="c2_cumple" value="S" checked></td>
               <td><input type="radio" name="c2_cumple" value="N"></td>
-              <td><code>PR2 (sp_respaldo_bd)</code></td>
+              <td><code>PR2 (sp_control_roles)</code></td>
             </tr>
 
             <!-- Control 3 -->
             <tr>
-              <td><strong>3 - A.12.4.1</strong></td>
-              <td class="text-left">Registro de eventos y trazabilidad en bitácoras (Logs de auditoría)</td>
-              <td><input type="checkbox" name="c3_i" checked></td>
+              <td><strong>A.8.24</strong></td>
+              <td class="text-left">Cifrado de datos sensibles en reposo y en tránsito (TDE)</td>
               <td><input type="checkbox" name="c3_c" checked></td>
+              <td><input type="checkbox" name="c3_i"></td>
               <td><input type="checkbox" name="c3_d"></td>
               <td>
                 <select name="c3_madurez" class="iso-select">
@@ -347,14 +347,168 @@
               </td>
               <td><input type="radio" name="c3_cumple" value="S"></td>
               <td><input type="radio" name="c3_cumple" value="N" checked></td>
-              <td><code>PR3 (sp_registrar_log)</code></td>
+              <td><code>PR3 (sp_cifrado_datos)</code></td>
+            </tr>
+
+            <!-- Control 4 -->
+            <tr>
+              <td><strong>A.8.7</strong></td>
+              <td class="text-left">Validación y sanitización de inputs contra Inyección SQL (SQLi)</td>
+              <td><input type="checkbox" name="c4_c" checked></td>
+              <td><input type="checkbox" name="c4_i" checked></td>
+              <td><input type="checkbox" name="c4_d"></td>
+              <td>
+                <select name="c4_madurez" class="iso-select">
+                  <option value="0">0 - Inexistente</option>
+                  <option value="1">1 - Inicial</option>
+                  <option value="2">2 - Repetible</option>
+                  <option value="3">3 - Definido</option>
+                  <option value="4" selected>4 - Administrado</option>
+                  <option value="5">5 - Optimizado</option>
+                </select>
+              </td>
+              <td><input type="radio" name="c4_cumple" value="S" checked></td>
+              <td><input type="radio" name="c4_cumple" value="N"></td>
+              <td><code>PR4 (sp_validar_parametros)</code></td>
+            </tr>
+
+            <!-- Control 5 -->
+            <tr>
+              <td><strong>A.8.12</strong></td>
+              <td class="text-left">Mascara de datos en entornos de prueba y prevención de fugas (DLP)</td>
+              <td><input type="checkbox" name="c5_c" checked></td>
+              <td><input type="checkbox" name="c5_i"></td>
+              <td><input type="checkbox" name="c5_d"></td>
+              <td>
+                <select name="c5_madurez" class="iso-select">
+                  <option value="0">0 - Inexistente</option>
+                  <option value="1">1 - Inicial</option>
+                  <option value="2" selected>2 - Repetible</option>
+                  <option value="3">3 - Definido</option>
+                  <option value="4">4 - Administrado</option>
+                  <option value="5">5 - Optimizado</option>
+                </select>
+              </td>
+              <td><input type="radio" name="c5_cumple" value="S"></td>
+              <td><input type="radio" name="c5_cumple" value="N" checked></td>
+              <td><code>PR5 (sp_enmascarar_datos)</code></td>
+            </tr>
+
+            <!-- Control 6 -->
+            <tr>
+              <td><strong>A.8.13</strong></td>
+              <td class="text-left">Respaldos automatizados periódicos y pruebas de restauración (RMAN)</td>
+              <td><input type="checkbox" name="c6_c"></td>
+              <td><input type="checkbox" name="c6_i" checked></td>
+              <td><input type="checkbox" name="c6_d" checked></td>
+              <td>
+                <select name="c6_madurez" class="iso-select">
+                  <option value="0">0 - Inexistente</option>
+                  <option value="1">1 - Inicial</option>
+                  <option value="2">2 - Repetible</option>
+                  <option value="3">3 - Definido</option>
+                  <option value="4" selected>4 - Administrado</option>
+                  <option value="5">5 - Optimizado</option>
+                </select>
+              </td>
+              <td><input type="radio" name="c6_cumple" value="S" checked></td>
+              <td><input type="radio" name="c6_cumple" value="N"></td>
+              <td><code>PR6 (sp_ejecutar_backup)</code></td>
+            </tr>
+
+            <!-- Control 7 -->
+            <tr>
+              <td><strong>A.8.14</strong></td>
+              <td class="text-left">Redundancia, alta disponibilidad y tolerancia a fallos en el SGBD</td>
+              <td><input type="checkbox" name="c7_c"></td>
+              <td><input type="checkbox" name="c7_i"></td>
+              <td><input type="checkbox" name="c7_d" checked></td>
+              <td>
+                <select name="c7_madurez" class="iso-select">
+                  <option value="0">0 - Inexistente</option>
+                  <option value="1" selected>1 - Inicial</option>
+                  <option value="2">2 - Repetible</option>
+                  <option value="3">3 - Definido</option>
+                  <option value="4">4 - Administrado</option>
+                  <option value="5">5 - Optimizado</option>
+                </select>
+              </td>
+              <td><input type="radio" name="c7_cumple" value="S"></td>
+              <td><input type="radio" name="c7_cumple" value="N" checked></td>
+              <td><code>PR7 (sp_verificar_nodo)</code></td>
+            </tr>
+
+            <!-- Control 8 -->
+            <tr>
+              <td><strong>A.8.15</strong></td>
+              <td class="text-left">Registro de eventos, auditoría de transacciones y bitácoras (Audit Trail)</td>
+              <td><input type="checkbox" name="c8_c" checked></td>
+              <td><input type="checkbox" name="c8_i" checked></td>
+              <td><input type="checkbox" name="c8_d"></td>
+              <td>
+                <select name="c8_madurez" class="iso-select">
+                  <option value="0">0 - Inexistente</option>
+                  <option value="1">1 - Inicial</option>
+                  <option value="2">2 - Repetible</option>
+                  <option value="3" selected>3 - Definido</option>
+                  <option value="4">4 - Administrado</option>
+                  <option value="5">5 - Optimizado</option>
+                </select>
+              </td>
+              <td><input type="radio" name="c8_cumple" value="S" checked></td>
+              <td><input type="radio" name="c8_cumple" value="N"></td>
+              <td><code>PR8 (sp_registrar_auditoria)</code></td>
+            </tr>
+
+            <!-- Control 9 -->
+            <tr>
+              <td><strong>A.8.16</strong></td>
+              <td class="text-left">Monitoreo de actividades anómalas y umbrales de rendimiento en tiempo real</td>
+              <td><input type="checkbox" name="c9_c" checked></td>
+              <td><input type="checkbox" name="c9_i"></td>
+              <td><input type="checkbox" name="c9_d" checked></td>
+              <td>
+                <select name="c9_madurez" class="iso-select">
+                  <option value="0">0 - Inexistente</option>
+                  <option value="1">1 - Inicial</option>
+                  <option value="2" selected>2 - Repetible</option>
+                  <option value="3">3 - Definido</option>
+                  <option value="4">4 - Administrado</option>
+                  <option value="5">5 - Optimizado</option>
+                </select>
+              </td>
+              <td><input type="radio" name="c9_cumple" value="S"></td>
+              <td><input type="radio" name="c9_cumple" value="N" checked></td>
+              <td><code>PR9 (sp_alerta_monitoreo)</code></td>
+            </tr>
+
+            <!-- Control 10 -->
+            <tr>
+              <td><strong>A.8.8</strong></td>
+              <td class="text-left">Gestión de parches de seguridad y vulnerabilidades del motor de BD</td>
+              <td><input type="checkbox" name="c10_c" checked></td>
+              <td><input type="checkbox" name="c10_i" checked></td>
+              <td><input type="checkbox" name="c10_d" checked></td>
+              <td>
+                <select name="c10_madurez" class="iso-select">
+                  <option value="0">0 - Inexistente</option>
+                  <option value="1">1 - Inicial</option>
+                  <option value="2">2 - Repetible</option>
+                  <option value="3" selected>3 - Definido</option>
+                  <option value="4">4 - Administrado</option>
+                  <option value="5">5 - Optimizado</option>
+                </select>
+              </td>
+              <td><input type="radio" name="c10_cumple" value="S" checked></td>
+              <td><input type="radio" name="c10_cumple" value="N"></td>
+              <td><code>PR10 (sp_check_parches)</code></td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <div class="iso-actions">
-        <button type="button" class="btn btn-primary" onclick="alert('Evaluación lista para enviar a Oracle Database mediante Apache/PHP')">
+        <button type="button" class="btn btn-primary" onclick="alert('Evaluación guardada temporalmente. Pendiente de conexión con el Stored Procedure de Oracle.')">
           Guardar Evaluación
         </button>
       </div>
