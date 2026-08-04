@@ -846,3 +846,377 @@ p {
     padding-top: calc(var(--header-h) + 60px);
   }
 }
+
+/* =========================================================
+   Cuestionario ISO/IEC 27002 — Evaluación de riesgo
+   ========================================================= */
+
+.isoq-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+ 
+.isoq-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: 999px;
+  padding: 7px 14px 7px 10px;
+  font-size: 0.82rem;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: var(--ink);
+}
+ 
+.isoq-legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+ 
+.isoq-method-note {
+  background: var(--white);
+  border: 1px dashed var(--gray-300);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  font-size: 0.85rem;
+  color: var(--gray-600);
+  margin-bottom: 28px;
+}
+ 
+.isoq-intro-card {
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  padding: 28px 30px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 28px;
+}
+ 
+.isoq-intro-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-top: 16px;
+}
+ 
+.isoq-field label {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--black-900);
+  margin-bottom: 6px;
+}
+ 
+.isoq-field input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-300);
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  background: var(--white);
+}
+ 
+.isoq-dashboard {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+ 
+.isoq-kpi {
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+ 
+.isoq-kpi .isoq-label {
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gray-600);
+  margin-bottom: 8px;
+}
+ 
+.isoq-kpi .isoq-value {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.7rem;
+  color: var(--black-900);
+}
+ 
+.isoq-kpi .isoq-risk {
+  margin-top: 8px;
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-family: var(--font-heading);
+  font-weight: 600;
+}
+ 
+.isoq-domain-block { margin-bottom: 28px; }
+ 
+.isoq-domain-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+ 
+.isoq-domain-title h3 { font-size: 1.15rem; margin: 0; }
+ 
+.isoq-domain-title span {
+  background: var(--black-900);
+  color: var(--gold);
+  font-size: 0.72rem;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+ 
+.isoq-control-card {
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  padding: 22px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+ 
+.isoq-control-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+ 
+.isoq-control-head h4 { font-size: 1rem; margin: 0 0 4px; }
+ 
+.isoq-control-meta { font-size: 0.8rem; color: var(--gray-600); }
+ 
+.isoq-control-meta code {
+  background: var(--gray-100);
+  border: 1px solid var(--gray-300);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--black-700);
+}
+ 
+.isoq-cid-tags { display: inline-flex; gap: 6px; margin-left: 8px; vertical-align: middle; }
+ 
+.isoq-cid-tags span {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  border: 1px solid var(--gray-300);
+  color: var(--gray-300);
+}
+ 
+.isoq-cid-tags span.is-active { background: var(--gold); color: var(--black-900); border-color: var(--gold); }
+ 
+.isoq-control-status { text-align: right; min-width: 150px; }
+ 
+.isoq-status-pill {
+  display: inline-block;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: var(--gray-300);
+  color: var(--black-900);
+}
+ 
+.isoq-status-sub { font-size: 0.72rem; color: var(--gray-600); margin-top: 4px; }
+ 
+.isoq-q-row {
+  display: grid;
+  grid-template-columns: 1.6fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid var(--gray-300);
+}
+ 
+.isoq-q-row p { margin: 0; font-size: 0.92rem; color: var(--ink); }
+ 
+.isoq-q-options { display: flex; gap: 14px; font-size: 0.85rem; white-space: nowrap; }
+ 
+.isoq-q-options label { display: flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 500; color: var(--gray-600); }
+ 
+.isoq-obs-row { margin-top: 14px; }
+ 
+.isoq-obs-row label {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--black-900);
+  margin-bottom: 6px;
+}
+ 
+.isoq-obs-row textarea {
+  width: 100%;
+  min-height: 54px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-300);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  resize: vertical;
+  background: var(--white);
+}
+ 
+.isoq-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  margin: 30px 0 40px;
+  flex-wrap: wrap;
+}
+ 
+/* ---------- Reporte ejecutivo ---------- */
+.isoq-report {
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  padding: 36px;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 10px;
+}
+ 
+.isoq-report[hidden] { display: none; }
+ 
+.isoq-report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 20px;
+  border-bottom: 1px solid var(--gray-300);
+  padding-bottom: 20px;
+  margin-bottom: 24px;
+}
+ 
+.isoq-report-header h3 { margin: 0 0 4px; }
+.isoq-report-meta { font-size: 0.85rem; color: var(--gray-600); }
+.isoq-report-meta strong { color: var(--black-900); }
+ 
+.isoq-report-index {
+  text-align: center;
+  padding: 10px 22px;
+  border-radius: var(--radius-md);
+}
+ 
+.isoq-report-index .isoq-value { font-family: var(--font-heading); font-weight: 700; font-size: 2.1rem; }
+.isoq-report-index .isoq-label { font-family: var(--font-heading); font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; }
+ 
+.isoq-report-section { margin-bottom: 30px; }
+.isoq-report-section h4 {
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gold-dark);
+  margin-bottom: 14px;
+}
+ 
+.isoq-report-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.isoq-report-table th, .isoq-report-table td { padding: 10px 12px; border-bottom: 1px solid var(--gray-300); text-align: left; }
+.isoq-report-table th { font-family: var(--font-heading); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--gray-600); }
+ 
+.isoq-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+ 
+.isoq-top-list { display: flex; flex-direction: column; gap: 10px; }
+.isoq-top-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--gray-100);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+}
+.isoq-top-item strong { font-size: 0.9rem; color: var(--black-900); }
+.isoq-top-item span.meta { font-size: 0.78rem; color: var(--gray-600); }
+ 
+.isoq-heatmap { display: flex; flex-wrap: wrap; gap: 6px; }
+.isoq-heat-cell {
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--white);
+  cursor: default;
+}
+ 
+/* ---------- Tarjeta de servicio destacada ---------- */
+.service-card.is-featured {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  flex-wrap: wrap;
+  border: 2px solid var(--gold);
+  background: linear-gradient(135deg, var(--white), var(--gray-100));
+}
+ 
+.service-card.is-featured .isoq-featured-copy { flex: 1; min-width: 260px; }
+.service-card.is-featured .service-icon { margin-bottom: 12px; }
+ 
+/* ---------- Colores de semáforo ---------- */
+.isoq-verde     { background: var(--isoq-verde-bg);    color: var(--isoq-verde); }
+.isoq-amarillo  { background: var(--isoq-amarillo-bg); color: var(--isoq-amarillo); }
+.isoq-naranja   { background: var(--isoq-naranja-bg);  color: var(--isoq-naranja); }
+.isoq-rojo      { background: var(--isoq-rojo-bg);     color: var(--isoq-rojo); }
+.isoq-gris      { background: var(--gray-300); color: var(--black-900); }
+ 
+:root {
+  --isoq-verde: #1f8a4c;    --isoq-verde-bg: #e6f4ec;
+  --isoq-amarillo: #b8860b; --isoq-amarillo-bg: #fdf3d8;
+  --isoq-naranja: #c1580f;  --isoq-naranja-bg: #fbe6d6;
+  --isoq-rojo: #b3261e;     --isoq-rojo-bg: #fbe2e0;
+}
+ 
+@media (max-width: 960px) {
+  .isoq-intro-grid, .isoq-dashboard { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .isoq-q-row { grid-template-columns: 1fr; }
+  .isoq-control-status { text-align: left; }
+  .isoq-report-header { flex-direction: column; }
+  .service-card.is-featured { flex-direction: column; align-items: flex-start; }
+}
