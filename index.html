@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Three Little Ducks | Database Consulting</title>
-<meta name="description" content="Three Little Ducks Database Consulting — administración, optimización, migración y seguridad de bases de datos para empresas.">
+<meta name="description" content="Three Little Ducks Database Consulting — administración, optimización, migración y seguridad de bases de datos para empresas." id="metaDescription">
 <link rel="icon" type="image/png" href="pictures/duck-logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,14 +25,19 @@
     </a>
 
     <nav class="main-nav" id="main-nav">
-      <a href="#servicios">Servicios</a>
-      <a href="#nosotros">Nosotros</a>
-      <a href="#proceso">Proceso</a>
-      <a href="#equipo">Equipo</a>
-      <a href="#contacto" class="nav-cta">Contáctanos</a>
+      <a href="#servicios" data-i18n="nav_services">Servicios</a>
+      <a href="#nosotros" data-i18n="nav_about">Nosotros</a>
+      <a href="#proceso" data-i18n="nav_process">Proceso</a>
+      <a href="#equipo" data-i18n="nav_team">Equipo</a>
+      <a href="#contacto" class="nav-cta" data-i18n="nav_contact">Contáctanos</a>
     </nav>
 
-    <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
+    <div class="lang-toggle" role="group" aria-label="Selector de idioma / Language selector">
+      <button type="button" class="lang-btn is-active" id="langEs" data-lang="es">ES</button>
+      <button type="button" class="lang-btn" id="langEn" data-lang="en">EN</button>
+    </div>
+
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" data-i18n-aria="nav_toggle_aria" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
   </div>
@@ -44,30 +49,15 @@
   <section class="hero">
     <div class="container hero-inner">
       <div class="hero-copy" data-reveal>
-        <p class="eyebrow">Consultoría especializada en bases de datos</p>
-        <h1>Sus datos, en manos seguras y expertas.</h1>
-        <p class="hero-lead">
+        <p class="eyebrow" data-i18n="hero_eyebrow">Consultoría especializada en bases de datos</p>
+        <h1 data-i18n="hero_title">Sus datos, en manos seguras y expertas.</h1>
+        <p class="hero-lead" data-i18n="hero_lead">
           Ayudamos a las empresas a administrar, optimizar y proteger sus bases de datos
           con soluciones confiables, escalables y adaptadas a cada negocio.
         </p>
         <div class="hero-actions">
-          <a href="#contacto" class="btn btn-primary">Solicitar una consulta</a>
-          <a href="#servicios" class="btn btn-ghost">Ver servicios</a>
-        </div>
-      </div>
-      <div class="hero-highlights" data-reveal>
-        <div class="hero-highlights-card">
-          <p class="hero-highlights-label">Basado en la tríada de seguridad</p>
-          <ul class="hero-triad">
-            <li class="triad-white">Confidencialidad</li>
-            <li class="triad-black">Integridad</li>
-            <li class="triad-gold">Disponibilidad</li>
-          </ul>
-          <ul class="hero-stats">
-            <li><strong>+99.9%</strong><span>Disponibilidad garantizada</span></li>
-            <li><strong>24/7</strong><span>Monitoreo continuo</span></li>
-            <li><strong>4</strong><span>Consultores especializados</span></li>
-          </ul>
+          <a href="#contacto" class="btn btn-primary" data-i18n="hero_cta_primary">Solicitar una consulta</a>
+          <a href="#servicios" class="btn btn-ghost" data-i18n="hero_cta_secondary">Ver servicios</a>
         </div>
       </div>
     </div>
@@ -76,12 +66,12 @@
   <!-- ===== TRUST STRIP ===== -->
   <section class="trust-strip">
     <div class="container trust-inner">
-      <span>Administración</span>
-      <span>Optimización</span>
-      <span>Migración</span>
-      <span>Seguridad</span>
-      <span>Respaldo &amp; Recuperación</span>
-      <span>DevOps de Datos</span>
+      <span data-i18n="trust_1">Administración</span>
+      <span data-i18n="trust_2">Optimización</span>
+      <span data-i18n="trust_3">Migración</span>
+      <span data-i18n="trust_4">Seguridad</span>
+      <span data-i18n="trust_5">Respaldo &amp; Recuperación</span>
+      <span data-i18n="trust_6">DevOps de Datos</span>
     </div>
   </section>
 
@@ -89,9 +79,9 @@
   <section class="section" id="servicios">
     <div class="container">
       <div class="section-head" data-reveal>
-        <p class="eyebrow">Qué hacemos</p>
-        <h2>Soluciones integrales para la gestión de sus bases de datos</h2>
-        <p class="section-lead">
+        <p class="eyebrow" data-i18n="services_eyebrow">Qué hacemos</p>
+        <h2 data-i18n="services_title">Soluciones integrales para la gestión de sus bases de datos</h2>
+        <p class="section-lead" data-i18n="services_lead">
           Cubrimos todo el ciclo de vida del dato: desde el diseño y la migración hasta el
           monitoreo, la seguridad y el cumplimiento normativo.
         </p>
@@ -103,48 +93,48 @@
           <div class="service-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M12 3c4.97 0 9 1.34 9 3s-4.03 3-9 3-9-1.34-9-3 4.03-3 9-3zM3 8.5C3 10.16 7.03 11.5 12 11.5s9-1.34 9-3.5M3 13c0 1.66 4.03 3 9 3s9-1.34 9-3M3 17.5c0 1.66 4.03 3 9 3s9-1.34 9-3V6"/></svg>
           </div>
-          <h3>Administración de bases de datos</h3>
-          <p>Gestión diaria (DBA), mantenimiento preventivo y soporte especializado para SQL Server, MySQL, PostgreSQL y Oracle.</p>
+          <h3 data-i18n="svc1_title">Administración de bases de datos</h3>
+          <p data-i18n="svc1_desc">Gestión diaria (DBA), mantenimiento preventivo y soporte especializado para SQL Server, MySQL, PostgreSQL y Oracle.</p>
         </article>
 
         <article class="service-card" data-reveal>
           <div class="service-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
           </div>
-          <h3>Optimización de rendimiento</h3>
-          <p>Análisis de consultas, indexación y ajuste de configuración para reducir tiempos de respuesta y costos de infraestructura.</p>
+          <h3 data-i18n="svc2_title">Optimización de rendimiento</h3>
+          <p data-i18n="svc2_desc">Análisis de consultas, indexación y ajuste de configuración para reducir tiempos de respuesta y costos de infraestructura.</p>
         </article>
 
         <article class="service-card" data-reveal>
           <div class="service-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14.93-4M20 12a8 8 0 0 1-14.93 4M8 4v4H4M16 20v-4h4"/></svg>
           </div>
-          <h3>Migración y modernización</h3>
-          <p>Migración a la nube o entre motores de bases de datos, con planes de transición sin interrupciones para su operación.</p>
+          <h3 data-i18n="svc3_title">Migración y modernización</h3>
+          <p data-i18n="svc3_desc">Migración a la nube o entre motores de bases de datos, con planes de transición sin interrupciones para su operación.</p>
         </article>
 
         <article class="service-card" data-reveal>
           <div class="service-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.4 8.7-8 10-4.6-1.3-8-5-8-10V6l8-4z"/></svg>
           </div>
-          <h3>Seguridad y cumplimiento</h3>
-          <p>Auditorías de seguridad, control de accesos, cifrado de datos y acompañamiento en normativas de protección de datos.</p>
+          <h3 data-i18n="svc4_title">Seguridad y cumplimiento</h3>
+          <p data-i18n="svc4_desc">Auditorías de seguridad, control de accesos, cifrado de datos y acompañamiento en normativas de protección de datos.</p>
         </article>
 
         <article class="service-card" data-reveal>
           <div class="service-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M12 2v6m0 0l3-3m-3 3L9 5M4 22v-6a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v6"/></svg>
           </div>
-          <h3>Respaldo y recuperación</h3>
-          <p>Estrategias de backup automatizado y planes de recuperación ante desastres para minimizar el riesgo de pérdida de información.</p>
+          <h3 data-i18n="svc5_title">Respaldo y recuperación</h3>
+          <p data-i18n="svc5_desc">Estrategias de backup automatizado y planes de recuperación ante desastres para minimizar el riesgo de pérdida de información.</p>
         </article>
 
         <article class="service-card" data-reveal>
           <div class="service-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M9 3h6l1 3h3v3l-2 1v4l2 1v3h-3l-1 3H9l-1-3H5v-3l2-1v-4l-2-1V6h3l1-3z"/></svg>
           </div>
-          <h3>Monitoreo continuo</h3>
-          <p>Supervisión 24/7 con alertas tempranas, reportes de salud y disponibilidad de sus sistemas críticos.</p>
+          <h3 data-i18n="svc6_title">Monitoreo continuo</h3>
+          <p data-i18n="svc6_desc">Supervisión 24/7 con alertas tempranas, reportes de salud y disponibilidad de sus sistemas críticos.</p>
         </article>
 
       </div>
@@ -154,22 +144,23 @@
   <!-- ===== NOSOTROS ===== -->
   <section class="section section-alt" id="nosotros">
     <div class="container about-content" data-reveal>
-      <p class="eyebrow">Quiénes somos</p>
-      <h2>Un equipo pequeño, con estándares de nivel empresarial</h2>
-      <p>
+      <p class="eyebrow" data-i18n="about_eyebrow">Quiénes somos</p>
+      <h2 data-i18n="about_title">Un equipo pequeño, con estándares de nivel empresarial</h2>
+      <p data-i18n-html="about_p1">
         <strong>Three Little Ducks Database Consulting</strong> nace de la convicción de que
         toda organización, sin importar su tamaño, merece una infraestructura de datos
         confiable, segura y bien administrada.
       </p>
-      <p>
+      <p data-i18n="about_p2">
         Combinamos experiencia técnica con un trato cercano y formal: entendemos su negocio,
         diagnosticamos con precisión y entregamos soluciones sostenibles a largo plazo.
       </p>
       <ul class="check-list">
-        <li>Metodología clara y documentada en cada proyecto</li>
-        <li>Comunicación directa con los consultores, sin intermediarios</li>
-        <li>Soluciones adaptadas al tamaño y presupuesto de cada cliente</li>
+        <li data-i18n="about_check1">Metodología clara y documentada en cada proyecto</li>
+        <li data-i18n="about_check2">Comunicación directa con los consultores, sin intermediarios</li>
+        <li data-i18n="about_check3">Soluciones adaptadas al tamaño y presupuesto de cada cliente</li>
       </ul>
+      <p class="about-academic" data-i18n="academic_note">Proyecto académico &mdash; Universidad Nacional, Escuela de Informática &middot; Curso: Administración de Bases de Datos</p>
     </div>
   </section>
 
@@ -177,30 +168,30 @@
   <section class="section" id="proceso">
     <div class="container">
       <div class="section-head" data-reveal>
-        <p class="eyebrow">Cómo trabajamos</p>
-        <h2>Un proceso simple, transparente y medible</h2>
+        <p class="eyebrow" data-i18n="process_eyebrow">Cómo trabajamos</p>
+        <h2 data-i18n="process_title">Un proceso simple, transparente y medible</h2>
       </div>
 
       <ol class="process-grid">
         <li class="process-step" data-reveal>
           <span class="step-number">01</span>
-          <h3>Diagnóstico</h3>
-          <p>Evaluamos el estado actual de sus bases de datos: rendimiento, seguridad y riesgos.</p>
+          <h3 data-i18n="step1_title">Diagnóstico</h3>
+          <p data-i18n="step1_desc">Evaluamos el estado actual de sus bases de datos: rendimiento, seguridad y riesgos.</p>
         </li>
         <li class="process-step" data-reveal>
           <span class="step-number">02</span>
-          <h3>Plan de acción</h3>
-          <p>Diseñamos una propuesta clara con alcance, tiempos y resultados esperados.</p>
+          <h3 data-i18n="step2_title">Plan de acción</h3>
+          <p data-i18n="step2_desc">Diseñamos una propuesta clara con alcance, tiempos y resultados esperados.</p>
         </li>
         <li class="process-step" data-reveal>
           <span class="step-number">03</span>
-          <h3>Implementación</h3>
-          <p>Ejecutamos los cambios con mínima interrupción para su operación diaria.</p>
+          <h3 data-i18n="step3_title">Implementación</h3>
+          <p data-i18n="step3_desc">Ejecutamos los cambios con mínima interrupción para su operación diaria.</p>
         </li>
         <li class="process-step" data-reveal>
           <span class="step-number">04</span>
-          <h3>Acompañamiento</h3>
-          <p>Damos seguimiento continuo y soporte para garantizar resultados sostenibles.</p>
+          <h3 data-i18n="step4_title">Acompañamiento</h3>
+          <p data-i18n="step4_desc">Damos seguimiento continuo y soporte para garantizar resultados sostenibles.</p>
         </li>
       </ol>
     </div>
@@ -210,33 +201,33 @@
   <section class="section section-alt" id="equipo">
     <div class="container">
       <div class="section-head" data-reveal>
-        <p class="eyebrow">Nuestro equipo</p>
-        <h2>Los consultores detrás de Three Little Ducks</h2>
+        <p class="eyebrow" data-i18n="team_eyebrow">Nuestro equipo</p>
+        <h2 data-i18n="team_title">Los consultores detrás de Three Little Ducks</h2>
       </div>
 
       <div class="grid team-grid">
         <article class="team-card" data-reveal>
           <div class="team-avatar">DJ</div>
           <h3>David Joel Soto Zúñiga</h3>
-          <p class="team-role">Desarrollador &amp; Consultor de Bases de Datos</p>
+          <p class="team-role" data-i18n="team_role_m">Desarrollador &amp; Consultor de Bases de Datos</p>
         </article>
 
         <article class="team-card" data-reveal>
           <div class="team-avatar">JE</div>
           <h3>Jeimy Espinoza Barquero</h3>
-          <p class="team-role">Desarrolladora &amp; Consultora de Bases de Datos</p>
+          <p class="team-role" data-i18n="team_role_f">Desarrolladora &amp; Consultora de Bases de Datos</p>
         </article>
 
         <article class="team-card" data-reveal>
           <div class="team-avatar">GS</div>
           <h3>Gloriana Sojo Pereira</h3>
-          <p class="team-role">Desarrolladora &amp; Consultora de Bases de Datos</p>
+          <p class="team-role" data-i18n="team_role_f">Desarrolladora &amp; Consultora de Bases de Datos</p>
         </article>
 
         <article class="team-card" data-reveal>
           <div class="team-avatar">LV</div>
           <h3>Liseth Vallejos Gonzales</h3>
-          <p class="team-role">Desarrolladora &amp; Consultora de Bases de Datos</p>
+          <p class="team-role" data-i18n="team_role_f">Desarrolladora &amp; Consultora de Bases de Datos</p>
         </article>
       </div>
     </div>
@@ -245,9 +236,9 @@
   <!-- ===== CTA ===== -->
   <section class="cta-band" data-reveal>
     <div class="container cta-inner">
-      <h2>¿Listo para fortalecer la infraestructura de sus datos?</h2>
-      <p>Conversemos sobre las necesidades de su base de datos y cómo podemos ayudarle.</p>
-      <a href="#contacto" class="btn btn-primary">Agendar una consulta</a>
+      <h2 data-i18n="cta_title">¿Listo para fortalecer la infraestructura de sus datos?</h2>
+      <p data-i18n="cta_lead">Conversemos sobre las necesidades de su base de datos y cómo podemos ayudarle.</p>
+      <a href="#contacto" class="btn btn-primary" data-i18n="cta_button">Agendar una consulta</a>
     </div>
   </section>
 
@@ -255,47 +246,47 @@
   <section class="section" id="contacto">
     <div class="container contact-grid">
       <div class="contact-info" data-reveal>
-        <p class="eyebrow">Contacto</p>
-        <h2>Hablemos de su proyecto</h2>
-        <p class="section-lead">
+        <p class="eyebrow" data-i18n="contact_eyebrow">Contacto</p>
+        <h2 data-i18n="contact_title">Hablemos de su proyecto</h2>
+        <p class="section-lead" data-i18n="contact_lead">
           Complete el formulario o escríbanos directamente. Responderemos a la brevedad
           posible para coordinar una primera reunión sin costo.
         </p>
 
         <ul class="contact-list">
           <li>
-            <span class="contact-label">Correo</span>
+            <span class="contact-label" data-i18n="contact_label_email">Correo</span>
             <span>contacto@threelittleducks.com</span>
           </li>
           <li>
-            <span class="contact-label">Ubicación</span>
-            <span>Costa Rica — Atención remota e híbrida</span>
+            <span class="contact-label" data-i18n="contact_label_location">Ubicación</span>
+            <span data-i18n="contact_value_location">Costa Rica — Atención remota e híbrida</span>
           </li>
           <li>
-            <span class="contact-label">Horario</span>
-            <span>Lunes a viernes, 8:00 a.m. – 5:00 p.m.</span>
+            <span class="contact-label" data-i18n="contact_label_hours">Horario</span>
+            <span data-i18n="contact_value_hours">Lunes a viernes, 8:00 a.m. – 5:00 p.m.</span>
           </li>
         </ul>
       </div>
 
       <form class="contact-form" id="contactForm" data-reveal novalidate>
         <div class="form-row">
-          <label for="name">Nombre completo</label>
-          <input type="text" id="name" name="name" required placeholder="Su nombre">
+          <label for="name" data-i18n="form_label_name">Nombre completo</label>
+          <input type="text" id="name" name="name" required placeholder="Su nombre" data-i18n-placeholder="form_placeholder_name">
         </div>
         <div class="form-row">
-          <label for="email">Correo electrónico</label>
-          <input type="email" id="email" name="email" required placeholder="nombre@empresa.com">
+          <label for="email" data-i18n="form_label_email">Correo electrónico</label>
+          <input type="email" id="email" name="email" required placeholder="nombre@empresa.com" data-i18n-placeholder="form_placeholder_email">
         </div>
         <div class="form-row">
-          <label for="company">Empresa</label>
-          <input type="text" id="company" name="company" placeholder="Nombre de su empresa (opcional)">
+          <label for="company" data-i18n="form_label_company">Empresa</label>
+          <input type="text" id="company" name="company" placeholder="Nombre de su empresa (opcional)" data-i18n-placeholder="form_placeholder_company">
         </div>
         <div class="form-row">
-          <label for="message">Mensaje</label>
-          <textarea id="message" name="message" rows="4" required placeholder="Cuéntenos sobre su proyecto o necesidad"></textarea>
+          <label for="message" data-i18n="form_label_message">Mensaje</label>
+          <textarea id="message" name="message" rows="4" required placeholder="Cuéntenos sobre su proyecto o necesidad" data-i18n-placeholder="form_placeholder_message"></textarea>
         </div>
-        <button type="submit" class="btn btn-primary btn-block">Enviar mensaje</button>
+        <button type="submit" class="btn btn-primary btn-block" data-i18n="form_submit">Enviar mensaje</button>
         <p class="form-note" id="formNote" role="status"></p>
       </form>
     </div>
@@ -315,18 +306,19 @@
     </a>
 
     <nav class="footer-nav">
-      <a href="#servicios">Servicios</a>
-      <a href="#nosotros">Nosotros</a>
-      <a href="#equipo">Equipo</a>
-      <a href="#contacto">Contacto</a>
+      <a href="#servicios" data-i18n="nav_services">Servicios</a>
+      <a href="#nosotros" data-i18n="nav_about">Nosotros</a>
+      <a href="#equipo" data-i18n="nav_team">Equipo</a>
+      <a href="#contacto" data-i18n="footer_nav_contact">Contacto</a>
     </nav>
 
-    <p class="footer-copy">&copy; <span id="year"></span> Three Little Ducks Database Consulting. Todos los derechos reservados.</p>
+    <p class="footer-copy">&copy; <span id="year"></span> Three Little Ducks Database Consulting. <span data-i18n="footer_rights">Todos los derechos reservados.</span></p>
   </div>
 </footer>
 
-<button class="scroll-top" id="scrollTop" aria-label="Volver arriba">↑</button>
+<button class="scroll-top" id="scrollTop" aria-label="Volver arriba" data-i18n-aria="scroll_top_aria">↑</button>
 
+<script src="js/i18n.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

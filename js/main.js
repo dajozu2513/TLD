@@ -102,17 +102,17 @@ function initContactForm() {
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!name || !email || !message) {
-      showNote("Por favor complete los campos obligatorios.", "is-error");
+      showNote(TLD_I18N.t("form_error_required"), "is-error");
       return;
     }
 
     if (!emailPattern.test(email)) {
-      showNote("Ingrese un correo electrónico válido.", "is-error");
+      showNote(TLD_I18N.t("form_error_email"), "is-error");
       return;
     }
 
     showNote(
-      `Gracias, ${name.split(" ")[0]}. Hemos recibido su mensaje y le contactaremos pronto.`,
+      TLD_I18N.t("form_success").replace("{name}", name.split(" ")[0]),
       "is-success"
     );
     form.reset();
