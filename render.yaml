@@ -1,0 +1,11 @@
+services:
+  - name: three-little-ducks
+    type: web
+    runtime: static
+    buildCommand: ""
+    staticPublishPath: .
+    pullRequestPreviewsEnabled: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
