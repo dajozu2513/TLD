@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>  
 </head>
 <body>
 
@@ -29,6 +30,7 @@
       <a href="#nosotros" data-i18n="nav_about">Nosotros</a>
       <a href="#proceso" data-i18n="nav_process">Proceso</a>
       <a href="#equipo" data-i18n="nav_team">Equipo</a>
+      <a href="#evaluacion" id="isoq-nav-link">Evaluación ISO</a>
       <a href="#contacto" class="nav-cta" data-i18n="nav_contact">Contáctanos</a>
     </nav>
 
@@ -88,6 +90,17 @@
       </div>
 
       <div class="grid services-grid">
+
+        <article class="service-card is-featured" data-reveal>
+          <div class="isoq-featured-copy">
+          <div class="service-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          </div>
+            <h3>Evaluación de riesgo ISO/IEC 27002</h3>
+            <p>Cuestionario interactivo que audita 15 controles de base de datos y calcula en vivo el nivel de madurez y la exposición al riesgo de Confidencialidad, Integridad y Disponibilidad, con reporte ejecutivo y exportación a Excel.</p>
+         </div>
+          <a href="#evaluacion" class="btn btn-primary">Iniciar evaluación →</a>
+        </article>
 
         <article class="service-card" data-reveal>
           <div class="service-icon" aria-hidden="true">
@@ -242,6 +255,43 @@
     </div>
   </section>
 
+  <!-- ===== EVALUACIÓN ISO / CUESTIONARIO ===== -->
+  <section class="section section-alt" id="evaluacion">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <p class="eyebrow" id="isoq-eyebrow">Herramienta de auditoría</p>
+        <h2 id="isoq-h2">Cuestionario de evaluación ISO/IEC 27002</h2>
+        <p class="section-lead" id="isoq-lead"></p>
+      </div>
+
+      <div class="isoq-legend" id="isoq-legend" data-reveal></div>
+      <p class="isoq-method-note" id="isoq-method-note" data-reveal></p>
+
+      <div class="isoq-intro-card" data-reveal>
+        <h3 id="isoq-intro-title">Datos de la auditoría</h3>
+        <p id="isoq-intro-lead" style="margin-bottom:0"></p>
+        <div class="isoq-intro-grid">
+          <div class="isoq-field"><label id="isoq-label-org">Organización</label><input type="text" id="isoq-f-org"></div>
+          <div class="isoq-field"><label id="isoq-label-area">Área evaluada</label><input type="text" id="isoq-f-area"></div>
+          <div class="isoq-field"><label id="isoq-label-auditor">Auditor</label><input type="text" id="isoq-f-auditor"></div>
+          <div class="isoq-field"><label id="isoq-label-fecha">Fecha</label><input type="date" id="isoq-f-fecha"></div>
+        </div>
+      </div>
+
+      <div class="isoq-dashboard" id="isoq-dashboard"></div>
+
+      <div id="isoq-controls" data-reveal></div>
+
+      <div class="isoq-actions">
+        <button type="button" class="btn btn-ghost" id="isoq-btn-reset">Limpiar respuestas</button>
+        <button type="button" class="btn btn-ghost" id="isoq-btn-reporte">Generar reporte ejecutivo</button>
+        <button type="button" class="btn btn-primary" id="isoq-btn-excel">Descargar en Excel</button>
+      </div>
+
+      <div class="isoq-report" id="isoq-reporte" hidden></div>
+    </div>
+  </section>
+  
   <!-- ===== CONTACTO ===== -->
   <section class="section" id="contacto">
     <div class="container contact-grid">
@@ -320,5 +370,6 @@
 
 <script src="js/i18n.js"></script>
 <script src="js/main.js"></script>
+<script src="js/iso-cuestionario.js"></script>
 </body>
 </html>
