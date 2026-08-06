@@ -55,6 +55,10 @@ const TLD_TRANSLATIONS = {
     svc6_title: "Monitoreo continuo",
     svc6_desc: "Supervisión 24/7 con alertas tempranas, reportes de salud y disponibilidad de sus sistemas críticos.",
 
+    svc_iso_title: "Evaluación de riesgo ISO/IEC 27002",
+    svc_iso_desc: "Cuestionario interactivo que audita 15 controles de base de datos y calcula en vivo el nivel de madurez y la exposición al riesgo de Confidencialidad, Integridad y Disponibilidad, con reporte ejecutivo y exportación a Excel y PDF.",
+    svc_iso_cta: "Iniciar evaluación →",
+    
     about_eyebrow: "Quiénes somos",
     about_title: "Un equipo pequeño, con estándares de nivel empresarial",
     about_p1: "<strong>Three Little Ducks Database Consulting</strong> nace de la convicción de que toda organización, sin importar su tamaño, merece una infraestructura de datos confiable, segura y bien administrada.",
@@ -160,6 +164,10 @@ const TLD_TRANSLATIONS = {
     svc5_desc: "Automated backup strategies and disaster recovery plans to minimize the risk of data loss.",
     svc6_title: "Continuous monitoring",
     svc6_desc: "24/7 monitoring with early alerts, health reports and availability tracking for your critical systems.",
+
+    svc_iso_title: "ISO/IEC 27002 Risk Assessment",
+    svc_iso_desc: "Interactive questionnaire that audits 15 database controls and calculates in real time the maturity level and risk exposure for Confidentiality, Integrity and Availability, with an executive report and Excel/PDF export.",
+    svc_iso_cta: "Start assessment →",
 
     about_eyebrow: "Who we are",
     about_title: "A small team, with enterprise-level standards",
