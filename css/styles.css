@@ -819,7 +819,8 @@ p {
 }
 
 .auth-card {
-  position: relative;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 420px;
   background: var(--white);
@@ -830,9 +831,8 @@ p {
 }
 
 .auth-lang-toggle {
-  position: absolute;
-  top: 24px;
-  right: 24px;
+  align-self: flex-end;
+  margin-bottom: 20px;
 }
 
 .auth-logo {
