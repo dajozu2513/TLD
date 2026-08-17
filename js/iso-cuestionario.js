@@ -1,8 +1,52 @@
 document.addEventListener("DOMContentLoaded", () => {
   if (!document.getElementById("isoq-controls")) return; // la sección no está en esta página
+
+  // El cuestionario solo está disponible para usuarios con cuenta,
+  // no para invitados (la sesión en sí ya se exige antes, vía el
+  // guard de la página — esto es una restricción adicional).
+  const session = typeof TLD_AUTH !== "undefined" ? TLD_AUTH.getSession() : null;
+  if (!session || session.type === "guest") {
+    showIsoqLocked();
+    return;
+  }
+
   initIsoCuestionario();
 });
- 
+
+// ---------- Panel de bloqueo para invitados ----------
+function showIsoqLocked() {
+  const container = document.querySelector("#evaluacion .container");
+  if (!container) return;
+
+  const keep = new Set(
+    [container.querySelector(".back-link"), container.querySelector(".section-head")].filter(Boolean)
+  );
+  Array.from(container.children).forEach((el) => {
+    if (!keep.has(el)) el.style.display = "none";
+  });
+
+  const locked = document.createElement("div");
+  locked.className = "isoq-locked";
+  container.appendChild(locked);
+
+  function render() {
+    const t = typeof TLD_I18N !== "undefined" ? TLD_I18N.t : (key) => key;
+    locked.innerHTML = `
+      <div class="isoq-locked-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#0a0a0a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+        </svg>
+      </div>
+      <h3>${t("isoq_locked_title")}</h3>
+      <p>${t("isoq_locked_message")}</p>
+      <a href="login.html?next=evaluacion.html" class="btn btn-primary">${t("isoq_locked_cta")}</a>
+    `;
+  }
+
+  render();
+  document.addEventListener("tld:langchange", render);
+}
+
 function initIsoCuestionario() {
  
   // ---------- Catálogo de controles (bilingüe) ----------
@@ -174,7 +218,7 @@ function initIsoCuestionario() {
   };
  
   function currentLang() {
-    return (window.TLD_I18N && typeof TLD_I18N.getLang === "function") ? TLD_I18N.getLang() : "es";
+    return (typeof TLD_I18N !== "undefined" && typeof TLD_I18N.getLang === "function") ? TLD_I18N.getLang() : "es";
   }
  
   function riesgoDe(exposicion, lang) {

@@ -279,6 +279,41 @@ p {
   color: var(--black-900);
 }
 
+.account-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.account-label {
+  font-family: var(--font-heading);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  white-space: nowrap;
+}
+
+.account-logout {
+  border: 1px solid var(--gray-300);
+  background: transparent;
+  color: var(--gray-600);
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.account-logout:hover {
+  border-color: var(--black-900);
+  color: var(--black-900);
+}
+
 .nav-toggle {
   display: none;
   flex-direction: column;
@@ -771,6 +806,96 @@ p {
   background: var(--gold-dark);
 }
 
+/* ---------- Auth (login / registro) ---------- */
+.auth-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(244, 183, 64, 0.12), transparent 60%),
+    var(--white);
+}
+
+.auth-card {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  padding: 40px 36px;
+  box-shadow: var(--shadow-lg);
+}
+
+.auth-lang-toggle {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+}
+
+.auth-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.auth-logo img {
+  height: 32px;
+  width: auto;
+}
+
+.auth-card h1 {
+  font-size: 1.5rem;
+  margin-bottom: 6px;
+}
+
+.auth-subtitle {
+  color: var(--gray-600);
+  font-size: 0.92rem;
+  margin-bottom: 28px;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+  color: var(--gray-600);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--gray-300);
+}
+
+.auth-guest-note {
+  margin: 12px 0 0;
+  font-size: 0.82rem;
+  color: var(--gray-600);
+  text-align: center;
+}
+
+.auth-switch {
+  margin: 24px 0 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--gray-600);
+}
+
+.auth-switch a {
+  color: var(--gold-dark);
+  font-weight: 600;
+}
+
 /* =========================================================
    Responsive
    ========================================================= */
@@ -850,6 +975,51 @@ p {
 /* =========================================================
    Cuestionario ISO/IEC 27002 — Evaluación de riesgo
    ========================================================= */
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 24px;
+  color: var(--gray-600);
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.back-link:hover {
+  color: var(--black-900);
+}
+
+.isoq-locked {
+  max-width: 560px;
+  margin: 0 auto;
+  text-align: center;
+  background: var(--gray-100);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  padding: 48px 36px;
+}
+
+.isoq-locked-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 20px;
+  border-radius: 12px;
+  background: linear-gradient(155deg, var(--gold), var(--gold-dark));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.isoq-locked h3 {
+  margin-bottom: 10px;
+}
+
+.isoq-locked p {
+  margin-bottom: 24px;
+}
 
 .isoq-legend {
   display: flex;

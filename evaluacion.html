@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+  // Exige sesión (usuario o invitado) antes de mostrar esta página.
+  // El acceso al cuestionario en sí (solo para usuarios, no invitados)
+  // se controla aparte en js/iso-cuestionario.js.
+  (function () {
+    var session = null;
+    try { session = JSON.parse(localStorage.getItem("tld_session")); } catch (e) {}
+    if (!session) {
+      location.replace("login.html?next=evaluacion.html");
+    }
+  })();
+</script>
+<title>Evaluación ISO/IEC 27002 | Three Little Ducks</title>
+<meta name="description" content="Cuestionario interactivo de evaluación de riesgo ISO/IEC 27002 para bases de datos — Three Little Ducks Database Consulting.">
+<link rel="icon" type="image/png" href="pictures/duck-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header" id="header">
+  <div class="container header-inner">
+    <a href="index.html" class="brand">
+      <img src="pictures/duck-logo.png" alt="Three Little Ducks logo" class="brand-logo">
+      <span class="brand-text">
+        <strong>Three Little Ducks</strong>
+        <small>Database Consulting</small>
+      </span>
+    </a>
+
+    <nav class="main-nav" id="main-nav">
+      <a href="index.html#servicios" data-i18n="nav_services">Servicios</a>
+      <a href="index.html#nosotros" data-i18n="nav_about">Nosotros</a>
+      <a href="index.html#proceso" data-i18n="nav_process">Proceso</a>
+      <a href="index.html#equipo" data-i18n="nav_team">Equipo</a>
+      <a href="index.html#contacto" class="nav-cta" data-i18n="nav_contact">Contáctanos</a>
+    </nav>
+
+    <div class="lang-toggle" role="group" aria-label="Selector de idioma / Language selector">
+      <button type="button" class="lang-btn is-active" id="langEs" data-lang="es">ES</button>
+      <button type="button" class="lang-btn" id="langEn" data-lang="en">EN</button>
+    </div>
+
+    <div class="account-box" id="accountBox">
+      <span class="account-label" id="accountLabel"></span>
+      <button type="button" class="account-logout" id="logoutBtn" data-i18n="account_logout">Salir</button>
+    </div>
+
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" data-i18n-aria="nav_toggle_aria" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ===== EVALUACIÓN ISO / CUESTIONARIO ===== -->
+  <section class="section" id="evaluacion">
+    <div class="container">
+      <a href="index.html" class="back-link">&larr; <span data-i18n="back_to_home">Volver al inicio</span></a>
+
+      <div class="section-head" data-reveal>
+        <p class="eyebrow" id="isoq-eyebrow">Herramienta de auditoría</p>
+        <h2 id="isoq-h2">Cuestionario de evaluación ISO/IEC 27002</h2>
+        <p class="section-lead" id="isoq-lead"></p>
+      </div>
+
+      <div class="isoq-legend" id="isoq-legend" data-reveal></div>
+      <p class="isoq-method-note" id="isoq-method-note" data-reveal></p>
+
+      <div class="isoq-intro-card" data-reveal>
+        <h3 id="isoq-intro-title">Datos de la auditoría</h3>
+        <p id="isoq-intro-lead" style="margin-bottom:0"></p>
+        <div class="isoq-intro-grid">
+          <div class="isoq-field"><label id="isoq-label-org">Organización</label><input type="text" id="isoq-f-org"></div>
+          <div class="isoq-field"><label id="isoq-label-area">Área evaluada</label><input type="text" id="isoq-f-area"></div>
+          <div class="isoq-field"><label id="isoq-label-auditor">Auditor</label><input type="text" id="isoq-f-auditor"></div>
+          <div class="isoq-field"><label id="isoq-label-fecha">Fecha</label><input type="date" id="isoq-f-fecha"></div>
+        </div>
+      </div>
+
+      <div class="isoq-dashboard" id="isoq-dashboard"></div>
+
+      <div id="isoq-controls"></div>
+
+      <div class="isoq-actions">
+        <button type="button" class="btn btn-ghost" id="isoq-btn-reset">Limpiar respuestas</button>
+        <button type="button" class="btn btn-ghost" id="isoq-btn-reporte">Generar reporte ejecutivo</button>
+        <button type="button" class="btn btn-primary" id="isoq-btn-excel">Descargar en Excel</button>
+      </div>
+
+      <div class="isoq-report" id="isoq-reporte" hidden></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <a href="index.html" class="brand brand-footer">
+      <img src="pictures/duck-logo.png" alt="Three Little Ducks logo" class="brand-logo">
+      <span class="brand-text">
+        <strong>Three Little Ducks</strong>
+        <small>Database Consulting</small>
+      </span>
+    </a>
+
+    <nav class="footer-nav">
+      <a href="index.html#servicios" data-i18n="nav_services">Servicios</a>
+      <a href="index.html#nosotros" data-i18n="nav_about">Nosotros</a>
+      <a href="index.html#equipo" data-i18n="nav_team">Equipo</a>
+      <a href="index.html#contacto" data-i18n="footer_nav_contact">Contacto</a>
+    </nav>
+
+    <p class="footer-copy">&copy; <span id="year"></span> Three Little Ducks Database Consulting. <span data-i18n="footer_rights">Todos los derechos reservados.</span></p>
+  </div>
+</footer>
+
+<button class="scroll-top" id="scrollTop" aria-label="Volver arriba" data-i18n-aria="scroll_top_aria">↑</button>
+
+<script src="js/i18n.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/main.js"></script>
+<script src="js/iso-cuestionario.js"></script>
+</body>
+</html>

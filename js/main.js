@@ -9,8 +9,35 @@ document.addEventListener("DOMContentLoaded", () => {
   initScrollReveal();
   initScrollTopButton();
   initContactForm();
+  initAccountBox();
   document.getElementById("year").textContent = new Date().getFullYear();
 });
+
+/* ---------- Estado de sesión en el header (usuario / invitado) ---------- */
+function initAccountBox() {
+  const box = document.getElementById("accountBox");
+  const label = document.getElementById("accountLabel");
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (!box || !label || !logoutBtn || typeof TLD_AUTH === "undefined") return;
+
+  function render() {
+    const session = TLD_AUTH.getSession();
+    if (!session) return;
+
+    label.textContent =
+      session.type === "guest"
+        ? TLD_I18N.t("account_guest_label")
+        : TLD_I18N.t("account_hello").replace("{name}", session.name.split(" ")[0]);
+  }
+
+  logoutBtn.addEventListener("click", () => {
+    TLD_AUTH.logout();
+    location.href = "login.html";
+  });
+
+  render();
+  document.addEventListener("tld:langchange", render);
+}
 
 /* ---------- Header cambia de estilo al hacer scroll ---------- */
 function initHeaderScroll() {

@@ -15,6 +15,7 @@ const TLD_TRANSLATIONS = {
     footer_nav_contact: "Contacto",
     nav_toggle_aria: "Abrir menú",
     scroll_top_aria: "Volver arriba",
+    back_to_home: "Volver al inicio",
 
     hero_eyebrow: "Consultoría especializada en bases de datos",
     hero_title: "Sus datos, en manos seguras y expertas.",
@@ -111,6 +112,41 @@ const TLD_TRANSLATIONS = {
 
     footer_rights: "Todos los derechos reservados.",
 
+    account_hello: "Hola, {name}",
+    account_guest_label: "Invitado",
+    account_logout: "Salir",
+
+    auth_login_title: "Iniciar sesión",
+    auth_login_subtitle: "Ingrese a su cuenta para continuar.",
+    auth_login_email: "Correo electrónico",
+    auth_login_password: "Contraseña",
+    auth_login_submit: "Iniciar sesión",
+    auth_login_no_account: "¿No tiene una cuenta?",
+    auth_login_register_link: "Regístrese",
+    auth_or: "o",
+    auth_guest_button: "Continuar como invitado",
+    auth_guest_note: "Como invitado puede explorar el sitio, pero necesitará una cuenta para realizar el cuestionario de evaluación.",
+
+    auth_register_title: "Crear cuenta",
+    auth_register_subtitle: "Regístrese para acceder a todas las herramientas.",
+    auth_register_name: "Nombre completo",
+    auth_register_email: "Correo electrónico",
+    auth_register_password: "Contraseña",
+    auth_register_confirm: "Confirmar contraseña",
+    auth_register_submit: "Crear cuenta",
+    auth_register_has_account: "¿Ya tiene una cuenta?",
+    auth_register_login_link: "Inicie sesión",
+
+    auth_error_required: "Por favor complete todos los campos.",
+    auth_error_email_taken: "Ya existe una cuenta con ese correo.",
+    auth_error_password_mismatch: "Las contraseñas no coinciden.",
+    auth_error_password_length: "La contraseña debe tener al menos 6 caracteres.",
+    auth_error_invalid_credentials: "Correo o contraseña incorrectos.",
+
+    isoq_locked_title: "Inicie sesión para continuar",
+    isoq_locked_message: "El cuestionario de evaluación ISO/IEC 27002 solo está disponible para usuarios registrados. Como invitado puede explorar el resto del sitio, pero necesita una cuenta para realizar esta evaluación.",
+    isoq_locked_cta: "Iniciar sesión",
+
     meta_description: "Three Little Ducks Database Consulting — administración, optimización, migración y seguridad de bases de datos para empresas."
   },
 
@@ -125,6 +161,7 @@ const TLD_TRANSLATIONS = {
     footer_nav_contact: "Contact",
     nav_toggle_aria: "Open menu",
     scroll_top_aria: "Back to top",
+    back_to_home: "Back to home",
 
     hero_eyebrow: "Specialized database consulting",
     hero_title: "Your data, in safe and expert hands.",
@@ -220,6 +257,41 @@ const TLD_TRANSLATIONS = {
     form_success: "Thank you, {name}. We've received your message and will contact you soon.",
 
     footer_rights: "All rights reserved.",
+
+    account_hello: "Hi, {name}",
+    account_guest_label: "Guest",
+    account_logout: "Log out",
+
+    auth_login_title: "Log in",
+    auth_login_subtitle: "Sign in to your account to continue.",
+    auth_login_email: "Email address",
+    auth_login_password: "Password",
+    auth_login_submit: "Log in",
+    auth_login_no_account: "Don't have an account?",
+    auth_login_register_link: "Sign up",
+    auth_or: "or",
+    auth_guest_button: "Continue as guest",
+    auth_guest_note: "As a guest you can explore the site, but you'll need an account to take the assessment questionnaire.",
+
+    auth_register_title: "Create account",
+    auth_register_subtitle: "Sign up to access every tool.",
+    auth_register_name: "Full name",
+    auth_register_email: "Email address",
+    auth_register_password: "Password",
+    auth_register_confirm: "Confirm password",
+    auth_register_submit: "Create account",
+    auth_register_has_account: "Already have an account?",
+    auth_register_login_link: "Log in",
+
+    auth_error_required: "Please fill in all fields.",
+    auth_error_email_taken: "An account with that email already exists.",
+    auth_error_password_mismatch: "Passwords don't match.",
+    auth_error_password_length: "Password must be at least 6 characters.",
+    auth_error_invalid_credentials: "Incorrect email or password.",
+
+    isoq_locked_title: "Log in to continue",
+    isoq_locked_message: "The ISO/IEC 27002 assessment questionnaire is only available to registered users. As a guest you can explore the rest of the site, but you need an account to take this assessment.",
+    isoq_locked_cta: "Log in",
 
     meta_description: "Three Little Ducks Database Consulting — database administration, optimization, migration and security for businesses."
   }

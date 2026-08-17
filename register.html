@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crear cuenta | Three Little Ducks</title>
+<meta name="description" content="Cree una cuenta en Three Little Ducks Database Consulting.">
+<link rel="icon" type="image/png" href="pictures/duck-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<script>
+  (function () {
+    try {
+      var session = JSON.parse(localStorage.getItem("tld_session"));
+      if (session) {
+        var params = new URLSearchParams(location.search);
+        location.replace(params.get("next") || "index.html");
+      }
+    } catch (e) {}
+  })();
+</script>
+</head>
+<body>
+
+<div class="auth-shell">
+  <div class="auth-card">
+    <div class="lang-toggle auth-lang-toggle" role="group" aria-label="Selector de idioma / Language selector">
+      <button type="button" class="lang-btn is-active" id="langEs" data-lang="es">ES</button>
+      <button type="button" class="lang-btn" id="langEn" data-lang="en">EN</button>
+    </div>
+
+    <a href="index.html" class="auth-logo">
+      <img src="pictures/duck-logo.png" alt="Three Little Ducks logo">
+      <span class="brand-text">
+        <strong>Three Little Ducks</strong>
+        <small>Database Consulting</small>
+      </span>
+    </a>
+
+    <h1 data-i18n="auth_register_title">Crear cuenta</h1>
+    <p class="auth-subtitle" data-i18n="auth_register_subtitle">Regístrese para acceder a todas las herramientas.</p>
+
+    <form id="registerForm" novalidate>
+      <div class="form-row">
+        <label for="name" data-i18n="auth_register_name">Nombre completo</label>
+        <input type="text" id="name" name="name" required autocomplete="name">
+      </div>
+      <div class="form-row">
+        <label for="email" data-i18n="auth_register_email">Correo electrónico</label>
+        <input type="email" id="email" name="email" required autocomplete="email">
+      </div>
+      <div class="form-row">
+        <label for="password" data-i18n="auth_register_password">Contraseña</label>
+        <input type="password" id="password" name="password" required autocomplete="new-password" minlength="6">
+      </div>
+      <div class="form-row">
+        <label for="confirm" data-i18n="auth_register_confirm">Confirmar contraseña</label>
+        <input type="password" id="confirm" name="confirm" required autocomplete="new-password" minlength="6">
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" data-i18n="auth_register_submit">Crear cuenta</button>
+      <p class="form-note" id="registerNote" role="status"></p>
+    </form>
+
+    <p class="auth-switch">
+      <span data-i18n="auth_register_has_account">¿Ya tiene una cuenta?</span>
+      <a href="login.html" id="loginLink" data-i18n="auth_register_login_link">Inicie sesión</a>
+    </p>
+  </div>
+</div>
+
+<script src="js/i18n.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  (function () {
+    var next = TLD_AUTH.getNextParam("index.html");
+    document.getElementById("loginLink").href = "login.html?next=" + encodeURIComponent(next);
+
+    var form = document.getElementById("registerForm");
+    var note = document.getElementById("registerNote");
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      var name = form.name.value.trim();
+      var email = form.email.value.trim();
+      var password = form.password.value;
+      var confirm = form.confirm.value;
+
+      if (!name || !email || !password || !confirm) {
+        showNote(TLD_I18N.t("auth_error_required"), "is-error");
+        return;
+      }
+      if (password.length < 6) {
+        showNote(TLD_I18N.t("auth_error_password_length"), "is-error");
+        return;
+      }
+      if (password !== confirm) {
+        showNote(TLD_I18N.t("auth_error_password_mismatch"), "is-error");
+        return;
+      }
+
+      try {
+        await TLD_AUTH.register(name, email, password);
+        location.href = next;
+      } catch (err) {
+        if (err.message === "EMAIL_TAKEN") {
+          showNote(TLD_I18N.t("auth_error_email_taken"), "is-error");
+        } else {
+          showNote(TLD_I18N.t("auth_error_required"), "is-error");
+        }
+      }
+    });
+
+    function showNote(text, className) {
+      note.textContent = text;
+      note.className = "form-note " + className;
+    }
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iniciar sesión | Three Little Ducks</title>
+<meta name="description" content="Inicie sesión en Three Little Ducks Database Consulting.">
+<link rel="icon" type="image/png" href="pictures/duck-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<script>
+  // Si ya hay una sesión activa, no tiene sentido mostrar el login de nuevo.
+  (function () {
+    try {
+      var session = JSON.parse(localStorage.getItem("tld_session"));
+      if (session) {
+        var params = new URLSearchParams(location.search);
+        location.replace(params.get("next") || "index.html");
+      }
+    } catch (e) {}
+  })();
+</script>
+</head>
+<body>
+
+<div class="auth-shell">
+  <div class="auth-card">
+    <div class="lang-toggle auth-lang-toggle" role="group" aria-label="Selector de idioma / Language selector">
+      <button type="button" class="lang-btn is-active" id="langEs" data-lang="es">ES</button>
+      <button type="button" class="lang-btn" id="langEn" data-lang="en">EN</button>
+    </div>
+
+    <a href="index.html" class="auth-logo">
+      <img src="pictures/duck-logo.png" alt="Three Little Ducks logo">
+      <span class="brand-text">
+        <strong>Three Little Ducks</strong>
+        <small>Database Consulting</small>
+      </span>
+    </a>
+
+    <h1 data-i18n="auth_login_title">Iniciar sesión</h1>
+    <p class="auth-subtitle" data-i18n="auth_login_subtitle">Ingrese a su cuenta para continuar.</p>
+
+    <form id="loginForm" novalidate>
+      <div class="form-row">
+        <label for="email" data-i18n="auth_login_email">Correo electrónico</label>
+        <input type="email" id="email" name="email" required autocomplete="email">
+      </div>
+      <div class="form-row">
+        <label for="password" data-i18n="auth_login_password">Contraseña</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" data-i18n="auth_login_submit">Iniciar sesión</button>
+      <p class="form-note" id="loginNote" role="status"></p>
+    </form>
+
+    <div class="auth-divider" data-i18n="auth_or">o</div>
+
+    <button type="button" class="btn btn-ghost btn-block" id="guestBtn" data-i18n="auth_guest_button">Continuar como invitado</button>
+    <p class="auth-guest-note" data-i18n="auth_guest_note">Como invitado puede explorar el sitio, pero necesitará una cuenta para realizar el cuestionario de evaluación.</p>
+
+    <p class="auth-switch">
+      <span data-i18n="auth_login_no_account">¿No tiene una cuenta?</span>
+      <a href="register.html" id="registerLink" data-i18n="auth_login_register_link">Regístrese</a>
+    </p>
+  </div>
+</div>
+
+<script src="js/i18n.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  (function () {
+    var next = TLD_AUTH.getNextParam("index.html");
+    document.getElementById("registerLink").href = "register.html?next=" + encodeURIComponent(next);
+
+    var form = document.getElementById("loginForm");
+    var note = document.getElementById("loginNote");
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      var email = form.email.value.trim();
+      var password = form.password.value;
+
+      if (!email || !password) {
+        showNote(TLD_I18N.t("auth_error_required"), "is-error");
+        return;
+      }
+
+      try {
+        await TLD_AUTH.login(email, password);
+        location.href = next;
+      } catch (err) {
+        showNote(TLD_I18N.t("auth_error_invalid_credentials"), "is-error");
+      }
+    });
+
+    document.getElementById("guestBtn").addEventListener("click", function () {
+      TLD_AUTH.loginAsGuest();
+      location.href = next;
+    });
+
+    function showNote(text, className) {
+      note.textContent = text;
+      note.className = "form-note " + className;
+    }
+  })();
+</script>
+</body>
+</html>
