@@ -11,10 +11,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 <script>
+  // Igual que en login.html: solo saltar la página si ya hay una
+  // sesión de usuario real, no si es de invitado.
   (function () {
     try {
       var session = JSON.parse(localStorage.getItem("tld_session"));
-      if (session) {
+      if (session && session.type === "user") {
         var params = new URLSearchParams(location.search);
         location.replace(params.get("next") || "index.html");
       }

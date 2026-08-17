@@ -951,6 +951,21 @@ p {
     text-align: center;
   }
 
+  .main-nav .lang-toggle,
+  .main-nav .account-box {
+    width: 100%;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--gray-300);
+  }
+
+  .main-nav .account-box {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: none;
+    justify-content: space-between;
+  }
+
   .nav-toggle {
     display: flex;
   }
