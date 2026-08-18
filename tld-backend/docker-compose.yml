@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: tld_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tld_db
+      POSTGRES_USER: tld_user
+      POSTGRES_PASSWORD: tld_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - tld_pgdata:/var/lib/postgresql/data
+      # Todo lo que esté en ./db se ejecuta UNA sola vez, en orden alfabético,
+      # la primera vez que se crea el volumen (por eso 01_ y 02_ de prefijo).
+      - ./db/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./db/02_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tld_user -d tld_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # pgAdmin es opcional, pero es útil para que el equipo vea las tablas
+  # con una interfaz gráfica sin instalar nada localmente.
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: tld_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@tld.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+
+volumes:
+  tld_pgdata:
