@@ -48,6 +48,73 @@ function showIsoqLocked() {
 }
 
 function initIsoCuestionario() {
+
+    const API_BASE = "http://localhost:3000/api";
+  let auditoriaActual = null;
+
+  async function guardarEnBaseDeDatos(resultados) {
+    try {
+      const orgNombre = document.getElementById("isoq-f-org")?.value?.trim() || "Organización demo";
+      const area = document.getElementById("isoq-f-area")?.value?.trim() || "Área demo";
+      const fecha = document.getElementById("isoq-f-fecha")?.value || new Date().toISOString().slice(0, 10);
+
+      // 1) Crear organización
+      const orgRes = await fetch(`${API_BASE}/organizaciones`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: orgNombre }),
+      });
+      if (!orgRes.ok) throw new Error("organizacion");
+      const org = await orgRes.json();
+
+      // 2) Crear auditoría
+      const audRes = await fetch(`${API_BASE}/auditorias`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_organizacion: org.id_organizacion,
+          area_evaluada: area,
+          fecha_auditoria: fecha,
+        }),
+      });
+      if (!audRes.ok) throw new Error("auditoria");
+      const aud = await audRes.json();
+      auditoriaActual = aud;
+
+      // 3) Armar respuestas (id_pregunta = (id_control-1)*3 + número de pregunta)
+      const payload = [];
+      resultados.forEach((r) => {
+        r.respuestas.forEach((val, idx) => {
+          if (!val || val === null) return;
+          payload.push({
+            id_pregunta: (r.id - 1) * 3 + (idx + 1),
+            valor_respuesta: val.toUpperCase(), // si/no/na → SI/NO/NA
+            observaciones: r.observaciones || null,
+          });
+        });
+      });
+
+      if (payload.length) {
+        await fetch(`${API_BASE}/auditorias/${aud.id_auditoria}/respuestas`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      // 4) Calcular y persistir en RESULTADO_*
+      const calcRes = await fetch(`${API_BASE}/auditorias/${aud.id_auditoria}/calcular`, {
+        method: "POST",
+      });
+      if (!calcRes.ok) throw new Error("calcular");
+
+      console.log(" Auditoría guardada en la base. id_auditoria =", aud.id_auditoria);
+      alert("Reporte generado y guardado en la base de datos (id " + aud.id_auditoria + ")");
+    } catch (err) {
+      console.error("No se pudo guardar en la base:", err);
+      alert("El reporte se generó en pantalla, pero no se pudo guardar en la base. ¿Está corriendo el backend?");
+    }
+  }
  
   // ---------- Catálogo de controles (bilingüe) ----------
   const CONTROLES = [
@@ -494,6 +561,7 @@ function initIsoCuestionario() {
   function generarReporte() {
     const S = STR[lang];
     const resultados = calcular();
+    guardarEnBaseDeDatos(resultados);
     const evaluados = resultados.filter(r => r.estado === "evaluado");
     const reportEl = document.getElementById("isoq-reporte");
     if (!reportEl) return;
