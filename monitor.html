@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+  (function () {
+    var session = null;
+    try { session = JSON.parse(localStorage.getItem("tld_session")); } catch (e) {}
+    if (!session) {
+      location.replace("login.html?next=monitor.html");
+    }
+  })();
+</script>
+<title>Monitor de Salud Oracle | Three Little Ducks</title>
+<meta name="description" content="Monitor de Salud de Base de Datos Oracle — Índice ISBD, procesos, memoria, archivos y alertas.">
+<link rel="icon" type="image/png" href="pictures/duck-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="site-header" id="header">
+  <div class="container header-inner">
+    <a href="index.html" class="brand">
+      <img src="pictures/duck-logo.png" alt="Three Little Ducks logo" class="brand-logo">
+      <span class="brand-text">
+        <strong>Three Little Ducks</strong>
+        <small>Database Consulting</small>
+      </span>
+    </a>
+    <nav class="main-nav" id="main-nav">
+      <a href="index.html#servicios">Servicios</a>
+      <a href="index.html#nosotros">Nosotros</a>
+      <a href="index.html#proceso">Proceso</a>
+      <a href="index.html#equipo">Equipo</a>
+      <a href="index.html#contacto" class="nav-cta">Contáctanos</a>
+      <div class="lang-toggle" role="group">
+        <button type="button" class="lang-btn is-active" id="langEs" data-lang="es">ES</button>
+        <button type="button" class="lang-btn" id="langEn" data-lang="en">EN</button>
+      </div>
+      <div class="account-box" id="accountBox">
+        <span class="account-label" id="accountLabel"></span>
+        <button type="button" class="account-logout" id="logoutBtn">Salir</button>
+      </div>
+    </nav>
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+  <section class="section mon-page">
+    <div class="container">
+
+      <a href="index.html" class="back-link">&larr; Volver al inicio</a>
+
+      <div class="mon-hero">
+        <div>
+          <p class="eyebrow">Herramienta de monitoreo</p>
+          <h1 class="mon-title">Monitor de Salud Oracle</h1>
+          <p class="mon-subtitle">Procesos · Memoria · Archivos → Índice ISBD y alertas en tiempo real</p>
+        </div>
+        <div class="mon-hero-actions">
+          <select id="mon-instance" class="mon-select">
+            <option value="sim-healthy">ORCL — Saludable</option>
+            <option value="sim-warning" selected>ORCL — Con advertencias</option>
+            <option value="sim-critical">ORCL — Crítico</option>
+            <option value="sim-random">ORCL — Aleatorio</option>
+          </select>
+          <button type="button" class="btn btn-primary" id="mon-btn-refresh">Actualizar ahora</button>
+          <label class="mon-auto-label">
+            <input type="checkbox" id="mon-auto-refresh" checked> Auto 15s
+          </label>
+        </div>
+      </div>
+
+      <p class="mon-last-update" id="mon-last-update">—</p>
+
+      <!-- ISBD principal -->
+      <div class="mon-isbd" id="mon-isbd-card">
+        <div class="mon-isbd-left">
+          <span class="mon-isbd-label">Índice de Salud de la Base de Datos (ISBD)</span>
+          <div class="mon-isbd-number" id="mon-isbd-value">—</div>
+          <span class="mon-badge" id="mon-isbd-status">—</span>
+        </div>
+        <div class="mon-isbd-right">
+          <div class="mon-weight"><span>Procesos</span><strong>30%</strong></div>
+          <div class="mon-weight"><span>Memoria</span><strong>35%</strong></div>
+          <div class="mon-weight"><span>Archivos</span><strong>35%</strong></div>
+          <p class="mon-formula">ISBD = 0.30×IP + 0.35×IM + 0.35×IA</p>
+        </div>
+      </div>
+
+      <!-- KPIs de los 3 indicadores -->
+      <div class="mon-kpi-row">
+        <div class="mon-kpi" id="mon-kpi-ip">
+          <div class="mon-kpi-top">
+            <span class="mon-kpi-name">Indicador de Procesos (IP)</span>
+            <span class="mon-badge" id="mon-ip-status">—</span>
+          </div>
+          <div class="mon-kpi-value" id="mon-ip-score">—</div>
+          <div class="mon-bar"><div class="mon-bar-fill" id="mon-ip-bar"></div></div>
+        </div>
+        <div class="mon-kpi" id="mon-kpi-im">
+          <div class="mon-kpi-top">
+            <span class="mon-kpi-name">Indicador de Memoria (IM)</span>
+            <span class="mon-badge" id="mon-im-status">—</span>
+          </div>
+          <div class="mon-kpi-value" id="mon-im-score">—</div>
+          <div class="mon-bar"><div class="mon-bar-fill" id="mon-im-bar"></div></div>
+        </div>
+        <div class="mon-kpi" id="mon-kpi-ia">
+          <div class="mon-kpi-top">
+            <span class="mon-kpi-name">Indicador de Archivos (IA)</span>
+            <span class="mon-badge" id="mon-ia-status">—</span>
+          </div>
+          <div class="mon-kpi-value" id="mon-ia-score">—</div>
+          <div class="mon-bar"><div class="mon-bar-fill" id="mon-ia-bar"></div></div>
+        </div>
+      </div>
+
+      <!-- Detalle en 3 columnas -->
+      <div class="mon-detail-grid">
+
+        <article class="mon-panel">
+          <h3 class="mon-panel-title">Procesos y sesiones</h3>
+          <div class="mon-stat-grid" id="mon-ip-stats"></div>
+          <h4 class="mon-panel-sub">Procesos de fondo Oracle</h4>
+          <ul class="mon-bg-list" id="mon-bg-processes"></ul>
+        </article>
+
+        <article class="mon-panel">
+          <h3 class="mon-panel-title">Memoria (SGA / PGA)</h3>
+          <div class="mon-stat-grid" id="mon-im-stats"></div>
+          <h4 class="mon-panel-sub">Uso visual</h4>
+          <div class="mon-mem-bars" id="mon-mem-bars"></div>
+        </article>
+
+        <article class="mon-panel">
+          <h3 class="mon-panel-title">Archivos y almacenamiento</h3>
+          <div class="mon-stat-grid" id="mon-ia-stats"></div>
+          <h4 class="mon-panel-sub">Tablespaces</h4>
+          <div class="mon-ts-summary" id="mon-ts-summary"></div>
+        </article>
+
+      </div>
+
+      <!-- Alertas + Historial -->
+      <div class="mon-bottom">
+        <article class="mon-panel mon-alerts-panel">
+          <div class="mon-panel-head">
+            <h3 class="mon-panel-title">Alertas activas</h3>
+            <span class="mon-count" id="mon-alert-count">0</span>
+          </div>
+          <ul class="mon-alert-list" id="mon-alerts-list"></ul>
+        </article>
+
+        <article class="mon-panel mon-history-panel">
+          <div class="mon-panel-head">
+            <h3 class="mon-panel-title">Evolución del ISBD</h3>
+            <button type="button" class="btn btn-ghost mon-btn-sm" id="mon-btn-clear-history">Limpiar historial</button>
+          </div>
+          <div class="mon-chart-wrap">
+            <canvas id="mon-canvas" width="640" height="200"></canvas>
+          </div>
+          <p class="mon-note">Últimas 40 mediciones guardadas en este navegador.</p>
+        </article>
+      </div>
+
+      <div class="mon-footnote">
+        <strong>Modo actual:</strong> simulación local con métricas inspiradas en vistas Oracle
+        (<code>V$PROCESS</code>, <code>V$SESSION</code>, <code>V$RESOURCE_LIMIT</code>, <code>V$SGA</code>,
+        <code>V$PGASTAT</code>, <code>V$DATAFILE</code>, <code>V$LOG</code>).
+        Cálculo según propuesta del curso: IP, IM, IA → ISBD.
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <a href="index.html" class="brand brand-footer">
+      <img src="pictures/duck-logo.png" alt="Three Little Ducks logo" class="brand-logo">
+      <span class="brand-text">
+        <strong>Three Little Ducks</strong>
+        <small>Database Consulting</small>
+      </span>
+    </a>
+    <p class="footer-copy">&copy; <span id="year"></span> Three Little Ducks Database Consulting.</p>
+  </div>
+</footer>
+
+<button class="scroll-top" id="scrollTop" aria-label="Volver arriba">↑</button>
+
+<script src="js/i18n.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/main.js"></script>
+<script src="js/monitor-salud.js"></script>
+</body>
+</html>
