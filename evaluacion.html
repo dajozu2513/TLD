@@ -23,6 +23,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -90,12 +92,17 @@
 
       <div class="isoq-dashboard" id="isoq-dashboard"></div>
 
+      <div class="isoq-resume-banner" id="isoq-resume-banner" hidden></div>
+
       <div id="isoq-controls"></div>
 
       <div class="isoq-actions">
+        <span class="isoq-save-status" id="isoq-save-status" aria-live="polite"></span>
         <button type="button" class="btn btn-ghost" id="isoq-btn-reset">Limpiar respuestas</button>
+        <button type="button" class="btn btn-ghost" id="isoq-btn-guardar">Guardar progreso</button>
         <button type="button" class="btn btn-ghost" id="isoq-btn-reporte">Generar reporte ejecutivo</button>
-        <button type="button" class="btn btn-primary" id="isoq-btn-excel">Descargar en Excel</button>
+        <button type="button" class="btn btn-primary" id="isoq-btn-excel" hidden>Descargar en Excel</button>
+        <button type="button" class="btn btn-primary" id="isoq-btn-pdf" hidden>Descargar en PDF</button>
       </div>
 
       <div class="isoq-report" id="isoq-reporte" hidden></div>

@@ -1,0 +1,38 @@
+-- =====================================================================
+-- Privilegios necesarios para el Monitor de Salud Oracle
+-- =====================================================================
+-- El usuario de la aplicación (tld_user, o el que hayas usado) solo
+-- tiene CONNECT/RESOURCE por defecto — eso alcanza para las tablas del
+-- proyecto (ORGANIZACION, AUDITORIA, etc.) pero NO para leer las vistas
+-- dinámicas de Oracle (V$SESSION, V$SGA, V$PGASTAT, DBA_DATA_FILES...)
+-- que usa el Monitor de Salud. Sin este GRANT, /api/monitor/salud falla
+-- con errores como:
+--   ORA-00942: table or view does not exist
+--
+-- Ejecuta esto UNA VEZ, conectado como un usuario con privilegios de
+-- administrador (sys as sysdba, o system), en el mismo PDB donde vive
+-- tld_user (recuerda: ALTER SESSION SET CONTAINER = XEPDB1; primero,
+-- si aplica).
+-- =====================================================================
+
+GRANT SELECT_CATALOG_ROLE TO tld_user;
+
+-- Si tu política de DBA no permite otorgar ese rol (da acceso de
+-- lectura a TODO el diccionario de datos), esta es la alternativa
+-- granular — otorga acceso únicamente a las vistas que usa el monitor:
+--
+-- GRANT SELECT ON V_$INSTANCE TO tld_user;
+-- GRANT SELECT ON V_$RESOURCE_LIMIT TO tld_user;
+-- GRANT SELECT ON V_$SESSION TO tld_user;
+-- GRANT SELECT ON V_$SESSION_LONGOPS TO tld_user;
+-- GRANT SELECT ON V_$PROCESS TO tld_user;
+-- GRANT SELECT ON V_$SGA TO tld_user;
+-- GRANT SELECT ON V_$SGAINFO TO tld_user;
+-- GRANT SELECT ON V_$SGASTAT TO tld_user;
+-- GRANT SELECT ON V_$SYSSTAT TO tld_user;
+-- GRANT SELECT ON V_$PGASTAT TO tld_user;
+-- GRANT SELECT ON V_$DATAFILE TO tld_user;
+-- GRANT SELECT ON V_$LOG TO tld_user;
+-- GRANT SELECT ON DBA_DATA_FILES TO tld_user;
+-- GRANT SELECT ON DBA_FREE_SPACE TO tld_user;
+-- GRANT SELECT ON DBA_TEMP_FREE_SPACE TO tld_user;

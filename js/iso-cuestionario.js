@@ -50,72 +50,199 @@ function showIsoqLocked() {
 function initIsoCuestionario() {
 
     const API_BASE = "http://localhost:3000/api";
-  let auditoriaActual = null;
+  const LS_KEY = "tld_isoq_progreso_v1";
+  let auditoriaActual = null; // { id_auditoria, id_organizacion }
 
-  async function guardarEnBaseDeDatos(resultados) {
+  // ---------- Progreso guardado en localStorage (solo para "recordar" qué auditoría continuar) ----------
+  function leerProgresoLocal() {
+    try { return JSON.parse(localStorage.getItem(LS_KEY)); } catch (e) { return null; }
+  }
+  function guardarProgresoLocal(snapshot) {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(snapshot)); } catch (e) {}
+  }
+  function borrarProgresoLocal() {
+    try { localStorage.removeItem(LS_KEY); } catch (e) {}
+  }
+
+  // Crea la organización + auditoría en la base la primera vez que se
+  // guarda algo; en guardados posteriores de la misma sesión reutiliza
+  // la misma auditoría (evita crear una fila nueva cada vez que el
+  // auditor le da "Guardar progreso").
+  async function asegurarAuditoria() {
+    if (auditoriaActual) return auditoriaActual;
+
+    const orgNombre = document.getElementById("isoq-f-org")?.value?.trim() || "Organización demo";
+    const area = document.getElementById("isoq-f-area")?.value?.trim() || "Área demo";
+    const fecha = document.getElementById("isoq-f-fecha")?.value || new Date().toISOString().slice(0, 10);
+
+    const orgRes = await fetch(`${API_BASE}/organizaciones`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nombre: orgNombre }),
+    });
+    if (!orgRes.ok) throw new Error("organizacion");
+    const org = await orgRes.json();
+
+    const audRes = await fetch(`${API_BASE}/auditorias`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id_organizacion: org.id_organizacion,
+        area_evaluada: area,
+        fecha_auditoria: fecha,
+      }),
+    });
+    if (!audRes.ok) throw new Error("auditoria");
+    const aud = await audRes.json();
+
+    auditoriaActual = aud;
+    guardarProgresoLocal({
+      id_auditoria: aud.id_auditoria,
+      org: orgNombre,
+      area,
+      auditor: document.getElementById("isoq-f-auditor")?.value?.trim() || "",
+      fecha,
+      savedAt: new Date().toISOString(),
+    });
+    return auditoriaActual;
+  }
+
+  // Arma el payload de respuestas (id_pregunta = (id_control-1)*3 + número de pregunta)
+  // y lo guarda vía PUT — sirve tanto para "Guardar progreso" (parcial)
+  // como como paso previo a "Generar reporte" (final).
+  async function guardarRespuestas(resultados) {
+    const aud = await asegurarAuditoria();
+
+    const payload = [];
+    resultados.forEach((r) => {
+      r.respuestas.forEach((val, idx) => {
+        if (!val) return;
+        payload.push({
+          id_pregunta: (r.id - 1) * 3 + (idx + 1),
+          valor_respuesta: val.toUpperCase(), // si/no/na → SI/NO/NA
+          observaciones: r.observaciones || null,
+        });
+      });
+    });
+
+    if (payload.length) {
+      const res = await fetch(`${API_BASE}/auditorias/${aud.id_auditoria}/respuestas`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("respuestas");
+    }
+
+    // refresca el snapshot local (por si cambiaron org/area/fecha/auditor)
+    guardarProgresoLocal({
+      id_auditoria: aud.id_auditoria,
+      org: document.getElementById("isoq-f-org")?.value?.trim() || "",
+      area: document.getElementById("isoq-f-area")?.value?.trim() || "",
+      auditor: document.getElementById("isoq-f-auditor")?.value?.trim() || "",
+      fecha: document.getElementById("isoq-f-fecha")?.value || "",
+      savedAt: new Date().toISOString(),
+    });
+
+    return aud;
+  }
+
+  async function calcularYPersistir(resultados) {
+    const aud = await guardarRespuestas(resultados);
+    const calcRes = await fetch(`${API_BASE}/auditorias/${aud.id_auditoria}/calcular`, { method: "POST" });
+    if (!calcRes.ok) throw new Error("calcular");
+    // la auditoría queda FINALIZADA en la base; ya no tiene sentido
+    // seguir ofreciendo "continuar" esta misma auditoría después
+    borrarProgresoLocal();
+    return aud;
+  }
+
+  // ---------- Botón "Guardar progreso" ----------
+  const statusEl = document.getElementById("isoq-save-status");
+  const btnGuardar = document.getElementById("isoq-btn-guardar");
+  btnGuardar?.addEventListener("click", async () => {
+    const S = STR[lang];
+    btnGuardar.classList.add("isoq-btn-loading");
+    if (statusEl) statusEl.textContent = S.guardando;
     try {
-      const orgNombre = document.getElementById("isoq-f-org")?.value?.trim() || "Organización demo";
-      const area = document.getElementById("isoq-f-area")?.value?.trim() || "Área demo";
-      const fecha = document.getElementById("isoq-f-fecha")?.value || new Date().toISOString().slice(0, 10);
-
-      // 1) Crear organización
-      const orgRes = await fetch(`${API_BASE}/organizaciones`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombre: orgNombre }),
-      });
-      if (!orgRes.ok) throw new Error("organizacion");
-      const org = await orgRes.json();
-
-      // 2) Crear auditoría
-      const audRes = await fetch(`${API_BASE}/auditorias`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id_organizacion: org.id_organizacion,
-          area_evaluada: area,
-          fecha_auditoria: fecha,
-        }),
-      });
-      if (!audRes.ok) throw new Error("auditoria");
-      const aud = await audRes.json();
-      auditoriaActual = aud;
-
-      // 3) Armar respuestas (id_pregunta = (id_control-1)*3 + número de pregunta)
-      const payload = [];
-      resultados.forEach((r) => {
-        r.respuestas.forEach((val, idx) => {
-          if (!val || val === null) return;
-          payload.push({
-            id_pregunta: (r.id - 1) * 3 + (idx + 1),
-            valor_respuesta: val.toUpperCase(), // si/no/na → SI/NO/NA
-            observaciones: r.observaciones || null,
-          });
-        });
-      });
-
-      if (payload.length) {
-        await fetch(`${API_BASE}/auditorias/${aud.id_auditoria}/respuestas`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-      }
-
-      // 4) Calcular y persistir en RESULTADO_*
-      const calcRes = await fetch(`${API_BASE}/auditorias/${aud.id_auditoria}/calcular`, {
-        method: "POST",
-      });
-      if (!calcRes.ok) throw new Error("calcular");
-
-      console.log(" Auditoría guardada en la base. id_auditoria =", aud.id_auditoria);
-      alert("Reporte generado y guardado en la base de datos (id " + aud.id_auditoria + ")");
+      const resultados = calcular();
+      await guardarRespuestas(resultados);
+      const hora = new Date().toLocaleTimeString(lang === "en" ? "en-US" : "es-CR", { hour: "2-digit", minute: "2-digit" });
+      if (statusEl) statusEl.textContent = S.guardado(hora);
     } catch (err) {
-      console.error("No se pudo guardar en la base:", err);
-      alert("El reporte se generó en pantalla, pero no se pudo guardar en la base. ¿Está corriendo el backend?");
+      console.error("No se pudo guardar el progreso:", err);
+      if (statusEl) statusEl.textContent = "";
+      alert(S.guardarError);
+    } finally {
+      btnGuardar.classList.remove("isoq-btn-loading");
+    }
+  });
+
+  // ---------- Banner "continuar auditoría guardada" ----------
+  const banner = document.getElementById("isoq-resume-banner");
+
+  function renderResumeBanner() {
+    const snapshot = leerProgresoLocal();
+    if (!banner) return;
+    if (!snapshot || !snapshot.id_auditoria) {
+      banner.hidden = true;
+      return;
+    }
+    const S = STR[lang];
+    banner.hidden = false;
+    banner.innerHTML = `
+      <div class="isoq-resume-text">
+        <strong>${S.resumeTitle}</strong>
+        <p>${S.resumeBody(snapshot.org || "—", snapshot.area, snapshot.fecha)}</p>
+      </div>
+      <div class="isoq-resume-actions">
+        <button type="button" class="btn btn-ghost" id="isoq-resume-descartar">${S.resumeDescartar}</button>
+        <button type="button" class="btn btn-primary" id="isoq-resume-continuar">${S.resumeContinuar}</button>
+      </div>
+    `;
+    document.getElementById("isoq-resume-continuar")?.addEventListener("click", () => continuarAuditoriaGuardada(snapshot));
+    document.getElementById("isoq-resume-descartar")?.addEventListener("click", () => {
+      borrarProgresoLocal();
+      banner.hidden = true;
+    });
+  }
+
+  async function continuarAuditoriaGuardada(snapshot) {
+    const S = STR[lang];
+    try {
+      const res = await fetch(`${API_BASE}/auditorias/${snapshot.id_auditoria}/respuestas`);
+      if (!res.ok) throw new Error("no encontrada");
+      const respuestas = await res.json();
+
+      // Restaura los campos de la auditoría
+      if (document.getElementById("isoq-f-org")) document.getElementById("isoq-f-org").value = snapshot.org || "";
+      if (document.getElementById("isoq-f-area")) document.getElementById("isoq-f-area").value = snapshot.area || "";
+      if (document.getElementById("isoq-f-auditor")) document.getElementById("isoq-f-auditor").value = snapshot.auditor || "";
+      if (document.getElementById("isoq-f-fecha")) document.getElementById("isoq-f-fecha").value = snapshot.fecha || "";
+
+      auditoriaActual = { id_auditoria: snapshot.id_auditoria };
+
+      // Restaura cada respuesta: id_pregunta = (id_control-1)*3 + pregunta
+      respuestas.forEach((r) => {
+        const idControl = Math.floor((r.id_pregunta - 1) / 3) + 1;
+        const idxPregunta = ((r.id_pregunta - 1) % 3) + 1;
+        const card = container.querySelector(`.isoq-control-card[data-control-id="${idControl}"]`);
+        if (!card) return;
+        const input = card.querySelector(`input[name="c${idControl}_q${idxPregunta}"][value="${(r.valor_respuesta || "").toLowerCase()}"]`);
+        if (input) input.checked = true;
+        if (r.observaciones) {
+          const obs = card.querySelector("[data-obs]");
+          if (obs) obs.value = r.observaciones;
+        }
+      });
+
+      if (banner) banner.hidden = true;
+      calcular();
+    } catch (err) {
+      console.error("No se pudo restaurar la auditoría guardada:", err);
+      alert(S.resumeError);
     }
   }
- 
   // ---------- Catálogo de controles (bilingüe) ----------
   const CONTROLES = [
     { id:1,  codigo:"5.9",       dominio:"Organizacional", peso:3, cid:{C:1,I:1,D:0},
@@ -208,8 +335,21 @@ function initIsoCuestionario() {
       subNoAplica: "Excluido del cálculo de madurez y riesgo",
       subEvaluado: (m,c) => `Madurez ${m}/5 · Cumplimiento ${c.toFixed(0)}%`,
       btnReset: "Limpiar respuestas",
+      btnGuardar: "Guardar progreso",
       btnReporte: "Generar reporte ejecutivo",
       btnExcel: "Descargar en Excel",
+      btnPdf: "Descargar en PDF",
+      guardando: "Guardando…",
+      guardado: hora => `✓ Progreso guardado a las ${hora}`,
+      guardarError: "No se pudo guardar el progreso. ¿Está corriendo el backend?",
+      resumeTitle: "Tienes una auditoría guardada",
+      resumeBody: (org, area, fecha) => `${org} · ${area || "—"} · ${fecha || "—"}`,
+      resumeContinuar: "Continuar donde quedé",
+      resumeDescartar: "Descartar y empezar de nuevo",
+      resumeError: "No se pudo cargar la auditoría guardada.",
+      pdfNoLib: "No se pudo cargar la librería de PDF. Verifique su conexión a internet.",
+      pdfGenerando: "Generando PDF…",
+      pdfError: "No se pudo generar el PDF.",
       reportEmpty: "Responda al menos un control para generar el reporte ejecutivo.",
       reportTitle: "Reporte ejecutivo de auditoría",
       reportArea: "Área", reportAuditor: "Auditor", reportFecha: "Fecha",
@@ -261,8 +401,21 @@ function initIsoCuestionario() {
       subNoAplica: "Excluded from the maturity and risk calculation",
       subEvaluado: (m,c) => `Maturity ${m}/5 · Compliance ${c.toFixed(0)}%`,
       btnReset: "Clear answers",
+      btnGuardar: "Save progress",
       btnReporte: "Generate executive report",
       btnExcel: "Download as Excel",
+      btnPdf: "Download as PDF",
+      guardando: "Saving…",
+      guardado: hora => `✓ Progress saved at ${hora}`,
+      guardarError: "Could not save progress. Is the backend running?",
+      resumeTitle: "You have a saved audit",
+      resumeBody: (org, area, fecha) => `${org} · ${area || "—"} · ${fecha || "—"}`,
+      resumeContinuar: "Continue where I left off",
+      resumeDescartar: "Discard and start over",
+      resumeError: "Could not load the saved audit.",
+      pdfNoLib: "Could not load the PDF library. Please check your internet connection.",
+      pdfGenerando: "Generating PDF…",
+      pdfError: "Could not generate the PDF.",
       reportEmpty: "Answer at least one control to generate the executive report.",
       reportTitle: "Executive audit report",
       reportArea: "Area", reportAuditor: "Auditor", reportFecha: "Date",
@@ -430,11 +583,14 @@ function initIsoCuestionario() {
  
     // Botones
     setText("isoq-btn-reset", S.btnReset);
+    setText("isoq-btn-guardar", S.btnGuardar);
     setText("isoq-btn-reporte", S.btnReporte);
     setText("isoq-btn-excel", S.btnExcel);
+    setText("isoq-btn-pdf", S.btnPdf);
   }
  
   applyTexts();
+  renderResumeBanner();
  
   // ---------- Cálculo en vivo ----------
   function calcular() {
@@ -544,24 +700,52 @@ function initIsoCuestionario() {
       kpi(S.kpiEvaluados, evaluados.length, null, ` / ${CONTROLES.length}`);
   }
  
-  container.addEventListener("change", calcular);
-  container.addEventListener("input", e => { if (e.target.matches("[data-obs]")) calcular(); });
+  const btnExcel = document.getElementById("isoq-btn-excel");
+  const btnPdf = document.getElementById("isoq-btn-pdf");
+
+  // El reporte, y los botones de descarga que dependen de él, solo son
+  // válidos mientras las respuestas no cambien: si el auditor edita algo
+  // después de generar el reporte, se ocultan hasta que lo regenere.
+  function invalidarReporte() {
+    const reportEl = document.getElementById("isoq-reporte");
+    if (reportEl && !reportEl.hasAttribute("hidden")) {
+      reportEl.setAttribute("hidden", "");
+      btnExcel?.setAttribute("hidden", "");
+      btnPdf?.setAttribute("hidden", "");
+    }
+  }
+
+  container.addEventListener("change", () => { invalidarReporte(); calcular(); });
+  container.addEventListener("input", e => { if (e.target.matches("[data-obs]")) { invalidarReporte(); calcular(); } });
   calcular();
- 
+
   // ---------- Botones ----------
   document.getElementById("isoq-btn-reset")?.addEventListener("click", () => {
     container.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
     container.querySelectorAll("textarea").forEach(t => t.value = "");
     document.getElementById("isoq-reporte")?.setAttribute("hidden", "");
+    btnExcel?.setAttribute("hidden", "");
+    btnPdf?.setAttribute("hidden", "");
+    if (statusEl) statusEl.textContent = "";
+    borrarProgresoLocal();
+    if (banner) banner.hidden = true;
+    auditoriaActual = null;
     calcular();
   });
- 
+
   document.getElementById("isoq-btn-reporte")?.addEventListener("click", () => generarReporte());
- 
+
   function generarReporte() {
     const S = STR[lang];
     const resultados = calcular();
-    guardarEnBaseDeDatos(resultados);
+    calcularYPersistir(resultados)
+      .then(aud => {
+        console.log("Auditoría guardada en la base. id_auditoria =", aud.id_auditoria);
+      })
+      .catch(err => {
+        console.error("No se pudo guardar en la base:", err);
+        alert("El reporte se generó en pantalla, pero no se pudo guardar en la base. ¿Está corriendo el backend?");
+      });
     const evaluados = resultados.filter(r => r.estado === "evaluado");
     const reportEl = document.getElementById("isoq-reporte");
     if (!reportEl) return;
@@ -569,6 +753,8 @@ function initIsoCuestionario() {
     if (!evaluados.length) {
       reportEl.hidden = false;
       reportEl.innerHTML = `<p style="margin:0">${S.reportEmpty}</p>`;
+      btnExcel?.setAttribute("hidden", "");
+      btnPdf?.setAttribute("hidden", "");
       reportEl.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
@@ -653,6 +839,8 @@ function initIsoCuestionario() {
         </div>
       </div>
     `;
+    btnExcel?.removeAttribute("hidden");
+    btnPdf?.removeAttribute("hidden");
     reportEl.scrollIntoView({ behavior: "smooth", block: "start" });
   }
  
@@ -710,11 +898,66 @@ function initIsoCuestionario() {
     const org = (document.getElementById("isoq-f-org")?.value || "auditoria").replace(/[^a-z0-9]+/gi, "_");
     XLSX.writeFile(wb, `cuestionario_iso27002_${org}.xlsx`);
   });
+
+  // ---------- Exportar a PDF ----------
+  document.getElementById("isoq-btn-pdf")?.addEventListener("click", async () => {
+    const S = STR[lang];
+    if (typeof window.jspdf === "undefined" || typeof window.html2canvas === "undefined") {
+      alert(S.pdfNoLib);
+      return;
+    }
+    const reportEl = document.getElementById("isoq-reporte");
+    if (!reportEl || reportEl.hasAttribute("hidden")) return;
+
+    const btn = document.getElementById("isoq-btn-pdf");
+    const textoOriginal = btn.textContent;
+    btn.textContent = S.pdfGenerando;
+    btn.classList.add("isoq-btn-loading");
+
+    try {
+      const { jsPDF } = window.jspdf;
+      const canvas = await window.html2canvas(reportEl, { scale: 2, backgroundColor: "#ffffff" });
+      const imgData = canvas.toDataURL("image/png");
+
+      const pdf = new jsPDF({ orientation: "p", unit: "pt", format: "a4" });
+      const margin = 24;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const usableWidth = pageWidth - margin * 2;
+      const usableHeight = pageHeight - margin * 2;
+      const imgWidth = usableWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      // Si el reporte no cabe en una página, se reparte en varias
+      // "recortando" verticalmente la misma imagen con offsets negativos.
+      let heightLeft = imgHeight;
+      let position = margin;
+      pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+      heightLeft -= usableHeight;
+
+      while (heightLeft > 0) {
+        position = margin - (imgHeight - heightLeft);
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+        heightLeft -= usableHeight;
+      }
+
+      const org = (document.getElementById("isoq-f-org")?.value || "auditoria").replace(/[^a-z0-9]+/gi, "_");
+      pdf.save(`reporte_iso27002_${org}.pdf`);
+    } catch (err) {
+      console.error("No se pudo generar el PDF:", err);
+      alert(S.pdfError);
+    } finally {
+      btn.textContent = textoOriginal;
+      btn.classList.remove("isoq-btn-loading");
+    }
+  });
  
   // ---------- Sincronización con el selector de idioma del sitio ----------
   document.addEventListener("tld:langchange", (e) => {
     lang = e.detail.lang;
     applyTexts();
+    if (banner && !banner.hidden) renderResumeBanner();
     calcular();
     const reportEl = document.getElementById("isoq-reporte");
     if (reportEl && !reportEl.hasAttribute("hidden")) generarReporte();

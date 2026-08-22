@@ -1,5 +1,5 @@
 const express = require("express");
-const pool = require("../db/pool");
+const { query } = require("../db/pool");
 
 const router = express.Router();
 
@@ -7,25 +7,39 @@ const router = express.Router();
 // Devuelve el catálogo completo (dominios -> controles -> preguntas + dimensiones CID)
 // Antes esto era el arreglo CONTROLES hardcodeado en js/iso-cuestionario.js;
 // ahora vive en la base de datos y el frontend lo consulta.
+//
+// Nota Oracle: Postgres tenía esto resuelto con un solo
+// array_agg(...) FILTER (WHERE ...) para juntar las dimensiones C/I/D
+// de cada control en una sola query. Oracle no tiene un equivalente
+// directo tan simple (habría que usar LISTAGG + parseo de texto), así
+// que aquí se trae la relación control-dimensión "plana" y se agrupa
+// en JavaScript, igual que ya se hacía con las preguntas.
 router.get("/", async (req, res) => {
   try {
-    const dominiosRes = await pool.query(
+    const dominiosRes = await query(
       "SELECT id_dominio, codigo_dominio, nombre_dominio FROM DOMINIO_ISO ORDER BY id_dominio"
     );
 
-    const controlesRes = await pool.query(`
-      SELECT c.id_control, c.id_dominio, c.codigo_control, c.nombre_control, c.peso,
-             COALESCE(array_agg(DISTINCT cd.codigo) FILTER (WHERE cd.codigo IS NOT NULL), '{}') AS dimensiones
-      FROM CONTROL c
-      LEFT JOIN CONTROL_DIMENSION cdm ON cdm.id_control = c.id_control
-      LEFT JOIN DIMENSION_RIESGO cd ON cd.id_dimension = cdm.id_dimension
-      GROUP BY c.id_control
-      ORDER BY c.id_control
+    const controlesRes = await query(
+      "SELECT id_control, id_dominio, codigo_control, nombre_control, peso FROM CONTROL ORDER BY id_control"
+    );
+
+    const dimensionesRes = await query(`
+      SELECT cdm.id_control, d.codigo
+      FROM CONTROL_DIMENSION cdm
+      JOIN DIMENSION_RIESGO d ON d.id_dimension = cdm.id_dimension
+      ORDER BY cdm.id_control
     `);
 
-    const preguntasRes = await pool.query(
+    const preguntasRes = await query(
       "SELECT id_pregunta, id_control, texto_pregunta, orden FROM PREGUNTA ORDER BY id_control, orden"
     );
+
+    const dimensionesPorControl = new Map();
+    for (const d of dimensionesRes.rows) {
+      if (!dimensionesPorControl.has(d.id_control)) dimensionesPorControl.set(d.id_control, []);
+      dimensionesPorControl.get(d.id_control).push(d.codigo);
+    }
 
     const preguntasPorControl = new Map();
     for (const p of preguntasRes.rows) {
@@ -35,6 +49,7 @@ router.get("/", async (req, res) => {
 
     const controles = controlesRes.rows.map((c) => ({
       ...c,
+      dimensiones: dimensionesPorControl.get(c.id_control) || [],
       preguntas: preguntasPorControl.get(c.id_control) || [],
     }));
 
