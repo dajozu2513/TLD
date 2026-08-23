@@ -9,7 +9,8 @@ const router = express.Router();
 // datos reales, leídos en vivo de las vistas dinámicas de Oracle:
 //   V$RESOURCE_LIMIT, V$SESSION, V$SESSION_LONGOPS, V$PROCESS,
 //   V$SGA, V$SGAINFO, V$SGASTAT, V$SYSSTAT, V$PGASTAT,
-//   V$DATAFILE, V$LOG, DBA_DATA_FILES, DBA_FREE_SPACE, DBA_TEMP_FREE_SPACE.
+//   V$DATAFILE, V$DATAFILE_HEADER, V$LOG, DBA_DATA_FILES, DBA_FREE_SPACE,
+//   DBA_TEMP_FREE_SPACE.
 //
 // El objeto que devuelve tiene EXACTAMENTE la misma forma que antes
 // producía `applyScenario(baseMetrics(), escenario)` en el frontend, así
@@ -25,7 +26,8 @@ router.get("/salud", async (req, res) => {
   try {
     const [
       instanceRes,
-      resourceLimitRes,
+      processCountRes,
+      processParamRes,
       sessionStatusRes,
       blockedRes,
       longOpsRes,
@@ -36,14 +38,19 @@ router.get("/salud", async (req, res) => {
       bufferHitRes,
       pgaRes,
       datafileRes,
+      datafileHeaderRes,
       logRes,
       tablespaceRes,
       tempRes,
     ] = await Promise.all([
       query("SELECT instance_name, host_name, status FROM V$INSTANCE"),
-      query(
-        "SELECT resource_name, current_utilization, limit_value FROM V$RESOURCE_LIMIT WHERE resource_name IN ('processes','sessions')"
-      ),
+      // V$RESOURCE_LIMIT no devuelve filas cuando se consulta dentro de
+      // un PDB (Oracle 21c XE con XEPDB1) — confirmado en pruebas: da 0
+      // filas incluso como SYSTEM. En su lugar usamos fuentes que sí
+      // funcionan dentro del PDB: conteo real de V$PROCESS y el
+      // parámetro PROCESSES desde V$PARAMETER.
+      query("SELECT COUNT(*) AS c FROM V$PROCESS"),
+      query("SELECT value FROM V$PARAMETER WHERE name = 'processes'"),
       query("SELECT status, COUNT(*) AS c FROM V$SESSION WHERE type = 'USER' GROUP BY status"),
       query("SELECT COUNT(*) AS c FROM V$SESSION WHERE blocking_session IS NOT NULL"),
       query(
@@ -63,6 +70,7 @@ router.get("/salud", async (req, res) => {
          )`
       ),
       query("SELECT status, COUNT(*) AS c FROM V$DATAFILE GROUP BY status"),
+      query("SELECT COUNT(*) AS c FROM V$DATAFILE_HEADER WHERE error IS NOT NULL"),
       query("SELECT status, COUNT(*) AS c FROM V$LOG GROUP BY status"),
       query(`
         SELECT d.tablespace_name AS tablespace_name,
@@ -77,7 +85,8 @@ router.get("/salud", async (req, res) => {
     ]);
 
     const metrics = buildMetrics({
-      resourceLimitRes,
+      processCountRes,
+      processParamRes,
       sessionStatusRes,
       blockedRes,
       longOpsRes,
@@ -88,6 +97,7 @@ router.get("/salud", async (req, res) => {
       bufferHitRes,
       pgaRes,
       datafileRes,
+      datafileHeaderRes,
       logRes,
       tablespaceRes,
       tempRes,
@@ -122,22 +132,19 @@ function pgaValue(rows, name) {
 
 function buildMetrics(d) {
   // ---- Procesos ----
-  const limitRows = d.resourceLimitRes.rows;
-  const procRow = limitRows.find((r) => r.resource_name === "processes");
-  const sessRow = limitRows.find((r) => r.resource_name === "sessions");
-
-  const processesCurrent = procRow ? num(procRow.current_utilization) : 0;
-  let processesLimit = procRow ? parseLimitValue(procRow.limit_value) : null;
-  if (!processesLimit) processesLimit = 300; // fallback conservador si viniera "UNLIMITED"
-
-  const sessionsCurrent = sessRow ? num(sessRow.current_utilization) : 0;
-  let sessionsLimit = sessRow ? parseLimitValue(sessRow.limit_value) : null;
-  if (!sessionsLimit) sessionsLimit = Math.round(processesLimit * 1.1 + 5); // fórmula por defecto de Oracle
+  const processesCurrent = num(d.processCountRes.rows[0]?.c, 0);
+  let processesLimit = parseLimitValue(d.processParamRes.rows[0]?.value);
+  if (!processesLimit) processesLimit = 300; // fallback si el parámetro no fuera legible
 
   const statusMap = {};
   d.sessionStatusRes.rows.forEach((r) => (statusMap[r.status] = num(r.c)));
   const sessionsActive = statusMap["ACTIVE"] || 0;
   const sessionsInactive = statusMap["INACTIVE"] || 0;
+  // "Sesiones" = sesiones de usuario (V$SESSION, type='USER'), como se
+  // documentó — no la mezclamos con procesos internos de Oracle.
+  const sessionsCurrent = sessionsActive + sessionsInactive;
+  const sessionsLimit = Math.round(processesLimit * 1.1 + 5); // fórmula por defecto de Oracle (PROCESSES → SESSIONS)
+
   const sessionsBlocked = num(d.blockedRes.rows[0]?.c, 0);
   const longOps = num(d.longOpsRes.rows[0]?.c, 0);
 
@@ -185,6 +192,11 @@ function buildMetrics(d) {
   const datafilesOnline = (dfMap["ONLINE"] || 0) + (dfMap["SYSTEM"] || 0);
   const datafilesOffline = dfMap["OFFLINE"] || 0;
   const datafilesProblem = dfMap["RECOVER"] || 0;
+  // Distinto de "datafilesProblem" (RECOVER: Oracle sabe que el archivo
+  // necesita recuperación de medios). Esto es más grave: Oracle ni
+  // siquiera pudo leer el encabezado del datafile (archivo no
+  // encontrado, corrupto o sin permisos).
+  const datafilesInaccessible = num(d.datafileHeaderRes.rows[0]?.c, 0);
 
   const logMap = {};
   d.logRes.rows.forEach((r) => (logMap[r.status] = num(r.c)));
@@ -200,9 +212,13 @@ function buildMetrics(d) {
   let tablespacesWarning = 0;
   let tablespacesCritical = 0;
   let maxTablespaceUsedPct = 0;
+  let totalAllocBytes = 0;
+  let totalFreeBytes = 0;
   d.tablespaceRes.rows.forEach((ts) => {
     const alloc = num(ts.alloc_bytes);
     const free = num(ts.free_bytes);
+    totalAllocBytes += alloc;
+    totalFreeBytes += free;
     if (alloc <= 0) return;
     const usedPct = ((alloc - free) / alloc) * 100;
     if (usedPct > maxTablespaceUsedPct) maxTablespaceUsedPct = usedPct;
@@ -211,6 +227,16 @@ function buildMetrics(d) {
     else tablespacesNormal++;
   });
   maxTablespaceUsedPct = Math.round(maxTablespaceUsedPct * 10) / 10;
+
+  // Tamaño total de datafiles (DBA_DATA_FILES.bytes sumado): espacio en
+  // disco reservado para datos, sin importar cuánto está ocupado.
+  const datafilesSizeMb = Math.round(totalAllocBytes / 1024 / 1024);
+  // Espacio de tablespaces: % de uso agregado de TODOS los tablespaces
+  // juntos (distinto de "maxTablespaceUsedPct", que es el peor caso
+  // individual — el detalle por tablespace se ve en los chips de abajo).
+  const tablespacesUsedPct = totalAllocBytes > 0
+    ? Math.round(((totalAllocBytes - totalFreeBytes) / totalAllocBytes) * 1000) / 10
+    : 0;
 
   let tempUsedPct = 0;
   if (d.tempRes.rows.length) {
@@ -241,6 +267,9 @@ function buildMetrics(d) {
     datafilesOnline,
     datafilesOffline,
     datafilesProblem,
+    datafilesInaccessible,
+    datafilesSizeMb,
+    tablespacesUsedPct,
     tablespacesNormal,
     tablespacesWarning,
     tablespacesCritical,

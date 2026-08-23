@@ -123,6 +123,63 @@
 
         <article class="mon-panel">
           <h3 class="mon-panel-title">Procesos y sesiones</h3>
+          <details class="mon-ip-formula">
+            <summary>Ver fórmula del Indicador de Procesos (IP)</summary>
+            <div class="mon-ip-formula-body">1. Utilización = máx(procesos actuales ÷ límite, sesiones actuales ÷ límite) × 100
+
+2. Score según la utilización:
+   &lt; 50%   → 95 + (50 − util) × 0.1
+   50–70%  → 80 + (70 − util) × 0.75
+   70–85%  → 65 + (85 − util) × 1.0
+   85–95%  → 40 + (95 − util) × 2.5
+   ≥ 95%   → máx(5, 40 − (util − 95) × 4)
+
+3. Penalizaciones adicionales:
+   − mín(25, sesiones bloqueadas × 6)
+   − mín(12, long ops × 3)
+
+IP = clamp(score, 0, 100)
+
+*clamp asegura que el resultado nunca sea menor a 0 ni mayor a 100.</div>
+            <div class="mon-ip-formula-body is-prose is-structured">
+              <p><strong>Clasificación del estado (semáforo):</strong> el IP resultante (igual que IM, IA e ISBD) se traduce a un estado visual según estos rangos de score:</p>
+              <div class="mon-table-wrap">
+                <table class="mon-ip-table mon-status-table">
+                  <thead><tr><th>Rango de score</th><th>Estado</th></tr></thead>
+                  <tbody>
+                    <tr><td>90 – 100</td><td><span class="mon-badge st-optimo">Óptimo</span></td></tr>
+                    <tr><td>75 – 89</td><td><span class="mon-badge st-saludable">Saludable</span></td></tr>
+                    <tr><td>60 – 74</td><td><span class="mon-badge st-advertencia">Advertencia</span></td></tr>
+                    <tr><td>40 – 59</td><td><span class="mon-badge st-degradado">Degradado</span></td></tr>
+                    <tr><td>0 – 39</td><td><span class="mon-badge st-critico">Crítico</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </details>
+          <details class="mon-ip-formula">
+            <summary>Ver umbrales del Indicador de Procesos (IP)</summary>
+            <div class="mon-ip-formula-body is-prose">Umbrales de utilización (procesos/sesiones vs. su límite):
+
+&lt; 50% — margen amplio, sin riesgo
+50–70% — uso saludable, ya vale la pena vigilar tendencia
+70–85% — advertencia temprana
+85–95% — riesgo real ante un pico de carga
+≥ 95% — crítico: al 100% Oracle rechaza conexiones nuevas (ORA-00020); se deja ese margen de reacción
+
+Penalizaciones aparte de la utilización (síntomas activos, no capacidad):
+
+Sesión bloqueada: −6 pts c/u (tope −25). Un solo bloqueo ya es un problema activo aunque la base esté poco cargada; el tope evita que muchos bloqueos aplasten el resto de la fórmula.
+Long op en curso: −3 pts c/u (tope −12). Pesa la mitad porque no siempre es un problema — puede ser mantenimiento normal (ej. crear un índice).
+
+Justificación de umbrales
+Se escogieron umbrales de tipo semáforo (70/85/95%), un patrón estándar en monitoreo de sistemas, dejando la zona crítica justo antes del 100% — el punto donde Oracle empieza a rechazar conexiones — para darle margen de reacción al DBA.
+
+Justificación de penalización
+Una sesión bloqueada es un problema cualitativamente distinto a "muchas conexiones" — puedes tener solo un 20% de utilización de procesos (nada saturado) y aun así tener un bloqueo grave que está paralizando una transacción crítica. Si el IP solo mirara utilización, este escenario se vería "saludable" cuando en realidad hay un problema activo. Por eso se resta aparte, independientemente de qué tan ocupada esté la base.
+
+Se separó la penalización por síntomas activos (bloqueos, long ops) de la utilización general, porque un sistema puede tener capacidad de sobra y aun así tener un problema puntual grave. Los bloqueos pesan más que los long ops porque un bloqueo siempre indica contención real, mientras que un long op puede ser una operación de mantenimiento normal.</div>
+          </details>
           <div class="mon-stat-grid" id="mon-ip-stats"></div>
           <h4 class="mon-panel-sub">Procesos de fondo Oracle</h4>
           <ul class="mon-bg-list" id="mon-bg-processes"></ul>
@@ -130,6 +187,91 @@
 
         <article class="mon-panel">
           <h3 class="mon-panel-title">Memoria (SGA / PGA)</h3>
+          <details class="mon-ip-formula">
+            <summary>Ver fórmula del Indicador de Memoria (IM)</summary>
+            <div class="mon-ip-formula-body">IM parte de un puntaje base de 92 y resta una penalización por cada señal de presión:
+
+Uso de SGA = (Tamaño SGA − Memoria libre SGA) ÷ Tamaño SGA × 100
+   &gt; 95%  → −18
+   &gt; 90%  → −10
+   &gt; 85%  → −5
+
+Uso de Shared Pool
+   &gt; 95%  → −8
+   &gt; 90%  → −4
+
+Uso de Buffer Cache (Hit Ratio: alto es bueno, aquí penaliza cuando es bajo)
+   &lt; 80%  → −15
+   &lt; 90%  → −8
+   &lt; 95%  → −3
+
+Uso de PGA = PGA utilizada ÷ PGA máxima × 100
+   &gt; 95%  → −15
+   &gt; 85%  → −8
+   &gt; 75%  → −3
+
+Over-allocation (conteo de eventos, no %)
+   &gt; 20  → −20
+   &gt; 5   → −12
+   &gt; 0   → −5
+
+Cache hit de PGA
+   &lt; 70%  → −15
+   &lt; 85%  → −8
+   &lt; 92%  → −3
+
+IM = clamp(92 − penalizaciones, 0, 100)
+
+*clamp asegura que el resultado nunca sea menor a 0 ni mayor a 100.</div>
+            <div class="mon-ip-formula-body is-prose is-structured">
+              <p><strong>Clasificación del estado (semáforo):</strong> el IM resultante (igual que IP, IA e ISBD) se traduce a un estado visual según estos rangos de score:</p>
+              <div class="mon-table-wrap">
+                <table class="mon-ip-table mon-status-table">
+                  <thead><tr><th>Rango de score</th><th>Estado</th></tr></thead>
+                  <tbody>
+                    <tr><td>90 – 100</td><td><span class="mon-badge st-optimo">Óptimo</span></td></tr>
+                    <tr><td>75 – 89</td><td><span class="mon-badge st-saludable">Saludable</span></td></tr>
+                    <tr><td>60 – 74</td><td><span class="mon-badge st-advertencia">Advertencia</span></td></tr>
+                    <tr><td>40 – 59</td><td><span class="mon-badge st-degradado">Degradado</span></td></tr>
+                    <tr><td>0 – 39</td><td><span class="mon-badge st-critico">Crítico</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </details>
+          <details class="mon-ip-formula">
+            <summary>Ver umbrales del Indicador de Memoria (IM)</summary>
+            <div class="mon-ip-formula-body is-prose is-structured">
+              <p><strong>Por qué esta fórmula y no una curva única como el IP:</strong> El IP mide un solo eje de riesgo (qué tan cerca del límite de procesos/sesiones), por eso usa una curva continua. El IM combina seis señales independientes de subsistemas de memoria distintos (SGA, Shared Pool, Buffer Cache, PGA, Over-allocation, PGA Cache Hit) que pueden fallar por separado — un problema en el Shared Pool no tiene relación técnica con un problema de Buffer Cache. Por eso se parte de un puntaje base de 92 y se le restan penalizaciones independientes por cada una, en vez de forzarlas a una sola fórmula continua.</p>
+
+              <p><strong>Por qué no hay un techo conjunto (a diferencia del IP):</strong> en el IP, un MIN(...) evitaba que un solo síntoma (bloqueos) aplastara todo el puntaje. En el IM, cada variable ya penaliza con moderación por separado; si las seis fallaran a la vez, el puntaje sí debe caer fuerte, porque significaría que toda la gestión de memoria está comprometida a la vez, no solo un aspecto puntual.</p>
+
+              <p><strong>Umbrales y peso exacto de cada escalón:</strong></p>
+              <div class="mon-table-wrap">
+                <table class="mon-ip-table">
+                  <thead>
+                    <tr><th>Variable</th><th>Escalón 1</th><th>Escalón 2</th><th>Escalón 3</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>Uso SGA</td><td>&gt;85% → −5</td><td>&gt;90% → −10</td><td>&gt;95% → −18</td></tr>
+                    <tr><td>Shared Pool</td><td>&gt;90% → −4</td><td>&gt;95% → −8</td><td>—</td></tr>
+                    <tr><td>Buffer Cache Hit</td><td>&lt;95% → −3</td><td>&lt;90% → −8</td><td>&lt;80% → −15</td></tr>
+                    <tr><td>Uso PGA</td><td>&gt;75% → −3</td><td>&gt;85% → −8</td><td>&gt;95% → −15</td></tr>
+                    <tr><td>Over-allocation</td><td>&gt;0 → −5</td><td>&gt;5 → −12</td><td>&gt;20 → −20</td></tr>
+                    <tr><td>PGA Cache Hit</td><td>&lt;92% → −3</td><td>&lt;85% → −8</td><td>&lt;70% → −15</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <p><strong>Por qué cada variable pesa distinto:</strong></p>
+              <p><strong>Uso SGA</strong> (hasta −18, la 2ª más alta): memoria compartida — si se agota, afecta a toda la instancia por igual, no solo a una sesión.</p>
+              <p><strong>Shared Pool</strong> (hasta −8, la más baja): el peor caso es re-parseo de SQL (más lento, pero la base sigue respondiendo) — impacto real pero acotado.</p>
+              <p><strong>Buffer Cache Hit</strong> (hasta −15): alto = bueno; un hit ratio bajo implica I/O físico frecuente, órdenes de magnitud más lento que memoria — cambio cualitativo de rendimiento, no gradual.</p>
+              <p><strong>Uso PGA</strong> (hasta −15): memoria privada por proceso, más volátil que la SGA (puede dispararse de golpe con una sola sesión pesada) — impacto algo más acotado que la SGA porque no golpea a toda la instancia por igual.</p>
+              <p><strong>Over-allocation</strong> (hasta −20, la más alta de todas): a diferencia de las demás, no es una proyección de riesgo — confirma que Oracle ya excedió PGA_AGGREGATE_TARGET al menos una vez. Por eso penaliza desde el primer evento (−5 con solo 1 caso), sin zona neutral.</p>
+              <p><strong>PGA Cache Hit</strong> (hasta −15): alto = bueno; mismo peso que Buffer Cache Hit, pero con umbrales más bajos (92/85/70% en vez de 95/90/80%) porque el rendimiento natural de la PGA en estas operaciones es menor.</p>
+            </div>
+          </details>
           <div class="mon-stat-grid" id="mon-im-stats"></div>
           <h4 class="mon-panel-sub">Uso visual</h4>
           <div class="mon-mem-bars" id="mon-mem-bars"></div>
@@ -137,6 +279,41 @@
 
         <article class="mon-panel">
           <h3 class="mon-panel-title">Archivos y almacenamiento</h3>
+          <details class="mon-ip-formula">
+            <summary>Ver fórmula del Indicador de Archivos (IA)</summary>
+            <div class="mon-ip-formula-body">IA parte de un puntaje base de 98 y resta una penalización por cada problema detectado:
+
+Archivos inaccesibles (V$DATAFILE_HEADER.ERROR)
+   por cada uno → −30
+
+Datafiles OFFLINE
+   por cada uno → −25
+
+Archivos inválidos (estado RECOVER)
+   por cada uno → −18
+
+Tablespaces críticos (≥95% de uso)
+   por cada uno → −20
+
+Tablespaces en advertencia (≥80% de uso)
+   por cada uno → −8
+
+Grupos de redo log con problema
+   por cada uno → −15
+
+Máximo uso de un tablespace
+   ≥ 95%  → −18
+   ≥ 85%  → −10
+   ≥ 75%  → −5
+
+Uso de TEMP
+   ≥ 95%  → −12
+   ≥ 85%  → −6
+
+IA = clamp(98 − penalizaciones, 0, 100)
+
+*clamp asegura que el resultado nunca sea menor a 0 ni mayor a 100.</div>
+          </details>
           <div class="mon-stat-grid" id="mon-ia-stats"></div>
           <h4 class="mon-panel-sub">Tablespaces</h4>
           <div class="mon-ts-summary" id="mon-ts-summary"></div>
@@ -192,6 +369,15 @@
 </footer>
 
 <button class="scroll-top" id="scrollTop" aria-label="Volver arriba">↑</button>
+
+<div class="mon-varinfo-backdrop" id="mon-varinfo-backdrop" hidden>
+  <div class="mon-varinfo-modal" role="dialog" aria-modal="true" aria-labelledby="mon-varinfo-title">
+    <button type="button" class="mon-varinfo-close" id="mon-varinfo-close" aria-label="Cerrar">&times;</button>
+    <h4 class="mon-varinfo-title" id="mon-varinfo-title">—</h4>
+    <p class="mon-varinfo-desc" id="mon-varinfo-desc"></p>
+    <pre class="mon-varinfo-formula" id="mon-varinfo-formula" hidden></pre>
+  </div>
+</div>
 
 <script src="js/i18n.js"></script>
 <script src="js/auth.js"></script>

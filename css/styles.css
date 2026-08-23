@@ -1730,7 +1730,7 @@ p {
 .mon-mem-bars { display: flex; flex-direction: column; gap: 10px; }
 .mon-mem-row {
   display: grid;
-  grid-template-columns: 100px 1fr 42px;
+  grid-template-columns: 100px 1fr 50px;
   align-items: center;
   gap: 10px;
   font-size: 0.82rem;
@@ -1846,3 +1846,160 @@ p {
   .mon-isbd { padding: 20px; }
   .mon-stat-grid { grid-template-columns: 1fr; }
 }
+
+/* Fórmula del IP (Procesos y sesiones) */
+.mon-ip-formula {
+  margin: -4px 0 16px;
+  border: 1px dashed var(--gray-300);
+  border-radius: 10px;
+  padding: 0 12px;
+}
+
+.mon-ip-formula summary {
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  padding: 8px 0;
+}
+
+.mon-ip-formula[open] summary { color: var(--black-900); }
+
+.mon-ip-formula-body {
+  font-family: ui-monospace, monospace;
+  font-size: 0.76rem;
+  line-height: 1.7;
+  color: var(--ink);
+  white-space: pre-wrap;
+  padding-bottom: 10px;
+}
+
+.mon-ip-formula-body.is-prose {
+  font-family: var(--font-body);
+  font-size: 0.84rem;
+  line-height: 1.65;
+  color: var(--gray-600);
+}
+
+/* Variante para bloques con párrafos + tabla: el pre-wrap del bloque
+   base preservaría los saltos de línea/indentación del propio HTML, así
+   que aquí se vuelve al espaciado normal y lo controlan los <p>. */
+.mon-ip-formula-body.is-structured {
+  white-space: normal;
+  padding-bottom: 4px;
+}
+
+.mon-ip-formula-body.is-structured p {
+  margin: 0 0 12px;
+}
+
+.mon-ip-formula-body.is-structured p:last-child { margin-bottom: 0; }
+
+.mon-table-wrap {
+  overflow-x: auto;
+  margin: 0 0 14px;
+}
+
+.mon-ip-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.mon-ip-table th,
+.mon-ip-table td {
+  padding: 6px 10px;
+  border: 1px solid var(--gray-300);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.mon-ip-table th {
+  background: var(--gray-100);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: var(--black-900);
+}
+
+.mon-ip-table td { color: var(--gray-600); }
+.mon-ip-table td:first-child { color: var(--black-900); font-weight: 600; }
+
+/* Ficha de variable: stats seleccionables de "Procesos y sesiones" */
+.mon-stat--clickable {
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mon-stat--clickable:hover,
+.mon-stat--clickable:focus-visible {
+  background: var(--gray-300);
+}
+
+.mon-stat--clickable:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--gold);
+}
+
+.mon-varinfo-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 200;
+}
+
+.mon-varinfo-backdrop[hidden] { display: none; }
+
+.mon-varinfo-modal {
+  position: relative;
+  background: var(--white);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  padding: 26px 24px 22px;
+  max-width: 420px;
+  width: 100%;
+}
+
+.mon-varinfo-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  border: none;
+  background: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--gray-600);
+  cursor: pointer;
+  padding: 6px;
+}
+
+.mon-varinfo-close:hover { color: var(--black-900); }
+
+.mon-varinfo-title {
+  margin: 0 24px 8px 0;
+  font-size: 1.1rem;
+}
+
+.mon-varinfo-desc {
+  font-size: 0.88rem;
+  color: var(--gray-600);
+  margin: 0;
+}
+
+.mon-varinfo-formula {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  background: var(--gray-100);
+  border-radius: 8px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.76rem;
+  line-height: 1.6;
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+
+.mon-varinfo-formula[hidden] { display: none; }

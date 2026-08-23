@@ -15,6 +15,10 @@
 
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
+  function formatMb(mb) {
+    return mb >= 1024 ? (mb / 1024).toFixed(1) + " GB" : mb + " MB";
+  }
+
   function calcIP(m) {
     var utilProc = (m.processesCurrent / m.processesLimit) * 100;
     var utilSess = (m.sessionsCurrent / m.sessionsLimit) * 100;
@@ -48,6 +52,10 @@
 
   function calcIA(m) {
     var score = 98;
+    // Más grave que "offline"/"problem": Oracle ni siquiera pudo leer el
+    // encabezado del datafile (archivo no encontrado, corrupto o sin
+    // permisos) — V$DATAFILE_HEADER.ERROR.
+    if (m.datafilesInaccessible > 0) score -= 30 * m.datafilesInaccessible;
     if (m.datafilesOffline > 0) score -= 25 * m.datafilesOffline;
     if (m.datafilesProblem > 0) score -= 18 * m.datafilesProblem;
     if (m.tablespacesCritical > 0) score -= 20 * m.tablespacesCritical;
@@ -82,8 +90,9 @@
     if (m.pgaCacheHitPct < 70) alerts.push({ nivel: "critico", componente: "Memoria", variable: "PGA cache hit", valor: m.pgaCacheHitPct.toFixed(1) + "%", umbral: "70%", descripcion: "Cache hit de PGA muy bajo." });
     else if (m.pgaCacheHitPct < 85) alerts.push({ nivel: "advertencia", componente: "Memoria", variable: "PGA cache hit", valor: m.pgaCacheHitPct.toFixed(1) + "%", umbral: "85%", descripcion: "Cache hit de PGA por debajo del deseable." });
     if (im.sgaUsedPct > 95) alerts.push({ nivel: "alto", componente: "Memoria", variable: "Uso SGA", valor: im.sgaUsedPct + "%", umbral: "95%", descripcion: "SGA con muy poco espacio libre." });
+    if (m.datafilesInaccessible > 0) alerts.push({ nivel: "critico", componente: "Archivos", variable: "Archivos inaccesibles", valor: m.datafilesInaccessible, umbral: 0, descripcion: m.datafilesInaccessible + " datafile(s) con error de encabezado (V$DATAFILE_HEADER.ERROR)." });
     if (m.datafilesOffline > 0) alerts.push({ nivel: "critico", componente: "Archivos", variable: "Datafiles OFFLINE", valor: m.datafilesOffline, umbral: 0, descripcion: m.datafilesOffline + " datafile(s) OFFLINE." });
-    if (m.datafilesProblem > 0) alerts.push({ nivel: "critico", componente: "Archivos", variable: "Datafiles problema", valor: m.datafilesProblem, umbral: 0, descripcion: "Datafiles con problemas de acceso." });
+    if (m.datafilesProblem > 0) alerts.push({ nivel: "critico", componente: "Archivos", variable: "Archivos inválidos", valor: m.datafilesProblem, umbral: 0, descripcion: "Datafiles en estado RECOVER (necesitan recuperación de medios)." });
     if (m.tablespacesCritical > 0) alerts.push({ nivel: "critico", componente: "Archivos", variable: "TS críticos", valor: m.tablespacesCritical, umbral: 0, descripcion: m.tablespacesCritical + " tablespace(s) críticos." });
     else if (m.tablespacesWarning > 0) alerts.push({ nivel: "advertencia", componente: "Archivos", variable: "TS advertencia", valor: m.tablespacesWarning, umbral: 0, descripcion: m.tablespacesWarning + " tablespace(s) próximos al límite." });
     if (m.maxTablespaceUsedPct >= 95) alerts.push({ nivel: "critico", componente: "Archivos", variable: "Máx. uso TS", valor: m.maxTablespaceUsedPct.toFixed(0) + "%", umbral: "95%", descripcion: "Tablespace supera 95% de uso." });
@@ -106,8 +115,143 @@
     el.className = "mon-bar-fill " + cls;
   }
 
-  function stat(label, value) {
-    return '<div class="mon-stat"><span class="mon-stat-label">' + label + '</span><span class="mon-stat-value">' + value + "</span></div>";
+  function stat(label, value, varKey) {
+    var attrs = varKey
+      ? ' class="mon-stat mon-stat--clickable" data-var="' + varKey + '" tabindex="0" role="button" aria-haspopup="dialog"'
+      : ' class="mon-stat"';
+    return "<div" + attrs + '><span class="mon-stat-label">' + label + '</span><span class="mon-stat-value">' + value + "</span></div>";
+  }
+
+  // Descripción de cada variable de "Procesos y sesiones", mostrada en
+  // la ventana emergente al hacer clic sobre la ficha correspondiente.
+  var VAR_INFO = {
+    processesCurrent: {
+      titulo: "Procesos actuales",
+      desc: "Número de procesos del sistema operativo que la instancia Oracle está usando en este momento, según la vista V$RESOURCE_LIMIT (recurso “processes”)."
+    },
+    processesLimit: {
+      titulo: "Límite procesos",
+      desc: "Cantidad máxima de procesos permitidos simultáneamente, definida por el parámetro de inicialización PROCESSES de la base de datos."
+    },
+    utilizacion: {
+      titulo: "Utilización",
+      desc: "Porcentaje de procesos en uso respecto al límite configurado (procesos actuales ÷ límite procesos × 100). Es el principal insumo del Indicador de Procesos (IP)."
+    },
+    sessionsCurrent: {
+      titulo: "Sesiones",
+      desc: "Número de sesiones de usuario actualmente conectadas a la base de datos (V$SESSION, type = ‘USER’)."
+    },
+    sessionsActive: {
+      titulo: "Activas",
+      desc: "Sesiones de usuario que en este momento están ejecutando trabajo dentro de la base de datos (status = ACTIVE)."
+    },
+    sessionsInactive: {
+      titulo: "Inactivas",
+      desc: "Sesiones de usuario conectadas pero sin trabajo en ejecución en este momento (status = INACTIVE)."
+    },
+    sessionsBlocked: {
+      titulo: "Bloqueadas",
+      desc: "Sesiones que están esperando liberar un lock que sostiene otra sesión (V$SESSION.blocking_session no nulo). Es una señal directa de contención entre procesos."
+    },
+    longOps: {
+      titulo: "Long ops",
+      desc: "Operaciones de larga duración en curso (V$SESSION_LONGOPS con trabajo pendiente y tiempo restante > 0), como reorganizaciones, respaldos o cargas masivas."
+    },
+    sgaTotalMb: {
+      titulo: "Tamaño de SGA",
+      desc: "Tamaño total de la System Global Area: la memoria compartida que usa la instancia para el buffer cache, el shared pool, el redo log buffer, etc. (suma de V$SGA)."
+    },
+    sgaFreeMb: {
+      titulo: "Memoria libre de SGA",
+      desc: "Memoria dentro de la SGA que todavía no ha sido reservada por ningún componente (V$SGAINFO, “Free SGA Memory Available”)."
+    },
+    sharedPoolPct: {
+      titulo: "Uso de Shared Pool",
+      desc: "Porcentaje en uso del shared pool, el área donde Oracle guarda planes de ejecución, cursores compartidos y metadata de diccionario (V$SGASTAT, pool = ‘shared pool’)."
+    },
+    bufferCachePct: {
+      titulo: "Uso de Buffer Cache",
+      desc: "Es, en realidad, el Buffer Cache Hit Ratio: el porcentaje de lecturas que Oracle resuelve desde memoria en vez de ir a disco (V$SYSSTAT: 1 − physical reads ÷ logical reads). A diferencia de las demás barras de memoria, aquí un valor ALTO es bueno."
+    },
+    pgaAllocatedMb: {
+      titulo: "PGA asignada",
+      desc: "Memoria total del Program Global Area que Oracle ha reservado en este momento para todos los procesos de servidor (V$PGASTAT, “total PGA allocated”)."
+    },
+    pgaInuseMb: {
+      titulo: "PGA utilizada",
+      desc: "Memoria del PGA que está efectivamente en uso ahora mismo por los procesos activos (V$PGASTAT, “total PGA inuse”)."
+    },
+    pgaTargetMb: {
+      titulo: "PGA máxima",
+      desc: "Meta configurada por el parámetro PGA_AGGREGATE_TARGET: el límite de memoria PGA que Oracle intenta respetar automáticamente."
+    },
+    pgaOverAlloc: {
+      titulo: "Over-allocation",
+      desc: "Número de veces que el PGA tuvo que exceder su target configurado porque la memoria no alcanzaba (V$PGASTAT, “over allocation count”). Es una señal directa de presión de memoria, no un porcentaje."
+    },
+    pgaCacheHitPct: {
+      titulo: "Cache hit de PGA",
+      desc: "Porcentaje de operaciones de trabajo (ordenamientos, hash joins, etc.) que caben en memoria sin tener que usar espacio temporal en disco (V$PGASTAT, “cache hit percentage”)."
+    },
+    datafilesOnline: {
+      titulo: "Datafiles online",
+      desc: "Cantidad de datafiles que están en línea y disponibles para lectura/escritura en este momento (V$DATAFILE, status ONLINE o SYSTEM)."
+    },
+    datafilesOffline: {
+      titulo: "Datafiles offline",
+      desc: "Cantidad de datafiles fuera de línea: no están disponibles para la instancia hasta ponerlos online explícitamente (V$DATAFILE, status OFFLINE)."
+    },
+    datafilesSizeMb: {
+      titulo: "Tamaño de datafiles",
+      desc: "Tamaño total, sumado, de todos los datafiles de la base de datos (DBA_DATA_FILES). Es el espacio en disco reservado para almacenar datos, sin importar cuánto está realmente ocupado."
+    },
+    tablespacesUsedPct: {
+      titulo: "Espacio de tablespaces",
+      desc: "Porcentaje de espacio usado en el conjunto de todos los tablespaces (espacio ocupado ÷ espacio total asignado × 100), a partir de DBA_DATA_FILES y DBA_FREE_SPACE. El detalle por tablespace (normal/advertencia/crítico) se ve en “Tablespaces”, más abajo.",
+      formula: "Espacio de tablespaces (%) =\n  (Σ tamaño datafiles − Σ espacio libre) ÷ Σ tamaño datafiles × 100\n\nΣ tamaño datafiles = suma de DBA_DATA_FILES.bytes de todos los tablespaces\nΣ espacio libre     = suma de DBA_FREE_SPACE.bytes de todos los tablespaces"
+    },
+    tempUsedPct: {
+      titulo: "Tempfiles",
+      desc: "Porcentaje de espacio en uso del tablespace temporal (TEMP), donde Oracle hace ordenamientos, hash joins y tablas temporales que no caben en memoria (DBA_TEMP_FREE_SPACE).",
+      formula: "Tempfiles (%) = promedio, por cada tablespace temporal, de:\n  (espacio asignado − espacio libre) ÷ tamaño del tablespace × 100\n\nDatos de DBA_TEMP_FREE_SPACE: allocated_space, free_space, tablespace_size"
+    },
+    redoLogs: {
+      titulo: "Redo logs",
+      desc: "Estado de los grupos de redo log, donde Oracle registra cada cambio antes de aplicarlo a los datafiles (V$LOG). “OK” agrupa los estados normales (CURRENT, ACTIVE, INACTIVE, UNUSED); “con problema” son estados fuera de lo esperado."
+    },
+    datafilesProblem: {
+      titulo: "Archivos inválidos",
+      desc: "Datafiles en estado RECOVER: Oracle detectó que necesitan recuperación de medios (media recovery) antes de poder usarse con normalidad (V$DATAFILE)."
+    },
+    datafilesInaccessible: {
+      titulo: "Archivos inaccesibles",
+      desc: "Datafiles cuyo encabezado Oracle no pudo leer correctamente: archivo no encontrado, dañado o sin permisos de acceso (V$DATAFILE_HEADER, columna ERROR). Es la señal más grave de las dos: el archivo ni siquiera responde."
+    }
+  };
+
+  function openVarInfo(key) {
+    var info = VAR_INFO[key];
+    if (!info) return;
+    document.getElementById("mon-varinfo-title").textContent = info.titulo;
+    document.getElementById("mon-varinfo-desc").textContent = info.desc;
+
+    var formulaEl = document.getElementById("mon-varinfo-formula");
+    if (info.formula) {
+      formulaEl.textContent = info.formula;
+      formulaEl.hidden = false;
+    } else {
+      formulaEl.hidden = true;
+      formulaEl.textContent = "";
+    }
+
+    var backdrop = document.getElementById("mon-varinfo-backdrop");
+    backdrop.hidden = false;
+    document.getElementById("mon-varinfo-close").focus();
+  }
+
+  function closeVarInfo() {
+    var backdrop = document.getElementById("mon-varinfo-backdrop");
+    if (!backdrop.hidden) backdrop.hidden = true;
   }
 
   function renderAll(ip, im, ia, isbd, alerts) {
@@ -135,14 +279,14 @@
     setBar("mon-ia-bar", ia.score, stIA.cls);
 
     document.getElementById("mon-ip-stats").innerHTML = [
-      stat("Procesos actuales", m.processesCurrent),
-      stat("Límite procesos", m.processesLimit),
-      stat("Utilización", ip.utilProc + "%"),
-      stat("Sesiones", m.sessionsCurrent),
-      stat("Activas", m.sessionsActive),
-      stat("Inactivas", m.sessionsInactive),
-      stat("Bloqueadas", m.sessionsBlocked),
-      stat("Long ops", m.longOps)
+      stat("Procesos actuales", m.processesCurrent, "processesCurrent"),
+      stat("Límite procesos", m.processesLimit, "processesLimit"),
+      stat("Utilización", ip.utilProc + "%", "utilizacion"),
+      stat("Sesiones", m.sessionsCurrent, "sessionsCurrent"),
+      stat("Activas", m.sessionsActive, "sessionsActive"),
+      stat("Inactivas", m.sessionsInactive, "sessionsInactive"),
+      stat("Bloqueadas", m.sessionsBlocked, "sessionsBlocked"),
+      stat("Long ops", m.longOps, "longOps")
     ].join("");
 
     var bgHtml = "";
@@ -154,14 +298,15 @@
     document.getElementById("mon-bg-processes").innerHTML = bgHtml;
 
     document.getElementById("mon-im-stats").innerHTML = [
-      stat("SGA total", m.sgaTotalMb + " MB"),
-      stat("SGA libre", m.sgaFreeMb + " MB"),
-      stat("Uso SGA", im.sgaUsedPct + "%"),
-      stat("Shared Pool", m.sharedPoolPct.toFixed(0) + "%"),
-      stat("Buffer Cache Hit", m.bufferCachePct.toFixed(1) + "%"),
-      stat("PGA en uso", m.pgaInuseMb + " MB"),
-      stat("PGA over-alloc", m.pgaOverAlloc),
-      stat("PGA cache hit", m.pgaCacheHitPct.toFixed(1) + "%")
+      stat("Tamaño de SGA", m.sgaTotalMb + " MB", "sgaTotalMb"),
+      stat("Memoria libre de SGA", m.sgaFreeMb + " MB", "sgaFreeMb"),
+      stat("Uso de Shared Pool", m.sharedPoolPct.toFixed(0) + "%", "sharedPoolPct"),
+      stat("Uso de Buffer Cache", m.bufferCachePct.toFixed(1) + "%", "bufferCachePct"),
+      stat("PGA asignada", m.pgaAllocatedMb + " MB", "pgaAllocatedMb"),
+      stat("PGA utilizada", m.pgaInuseMb + " MB", "pgaInuseMb"),
+      stat("PGA máxima", m.pgaTargetMb + " MB", "pgaTargetMb"),
+      stat("Over-allocation", m.pgaOverAlloc, "pgaOverAlloc"),
+      stat("Cache hit de PGA", m.pgaCacheHitPct.toFixed(1) + "%", "pgaCacheHitPct")
     ].join("");
 
     function memBar(label, pct, inverso) {
@@ -173,22 +318,34 @@
       }
       return '<div class="mon-mem-row"><span>' + label + '</span><div class="mon-bar"><div class="mon-bar-fill ' + c + '" style="width:' + clamp(pct, 0, 100) + '%"></div></div><strong>' + pct.toFixed(0) + "%</strong></div>";
     }
+    // Over-allocation no es un porcentaje sino un conteo de eventos
+    // (V$PGASTAT "over allocation count"), así que se muestra como
+    // nivel cualitativo (BAJO/MEDIO/ALTO) en vez de "%", siguiendo los
+    // mismos cortes que penalizan el IM en calcIM().
+    function overAllocRow(count) {
+      var level = count <= 0
+        ? { label: "BAJO", pct: 15, cls: "st-saludable" }
+        : count <= 5
+          ? { label: "MEDIO", pct: 55, cls: "st-advertencia" }
+          : { label: "ALTO", pct: 90, cls: "st-critico" };
+      return '<div class="mon-mem-row"><span>Over-allocation</span><div class="mon-bar"><div class="mon-bar-fill ' + level.cls + '" style="width:' + level.pct + '%"></div></div><strong>' + level.label + "</strong></div>";
+    }
     document.getElementById("mon-mem-bars").innerHTML =
       memBar("SGA", im.sgaUsedPct) +
       memBar("Shared Pool", m.sharedPoolPct) +
       memBar("Buffer Cache Hit", m.bufferCachePct, true) +
-      memBar("PGA", im.pgaUsedPct);
+      memBar("PGA", im.pgaUsedPct) +
+      overAllocRow(m.pgaOverAlloc);
 
     document.getElementById("mon-ia-stats").innerHTML = [
-      stat("Datafiles ONLINE", m.datafilesOnline),
-      stat("Datafiles OFFLINE", m.datafilesOffline),
-      stat("Con problemas", m.datafilesProblem),
-      stat("TS normales", m.tablespacesNormal),
-      stat("TS advertencia", m.tablespacesWarning),
-      stat("TS críticos", m.tablespacesCritical),
-      stat("Máx. uso TS", m.maxTablespaceUsedPct.toFixed(0) + "%"),
-      stat("Uso TEMP", m.tempUsedPct.toFixed(0) + "%"),
-      stat("Redo OK / problema", m.redoGroupsOk + " / " + m.redoGroupsProblem)
+      stat("Datafiles online", m.datafilesOnline, "datafilesOnline"),
+      stat("Datafiles offline", m.datafilesOffline, "datafilesOffline"),
+      stat("Tamaño de datafiles", formatMb(m.datafilesSizeMb), "datafilesSizeMb"),
+      stat("Espacio de tablespaces", m.tablespacesUsedPct.toFixed(0) + "%", "tablespacesUsedPct"),
+      stat("Tempfiles", m.tempUsedPct.toFixed(0) + "%", "tempUsedPct"),
+      stat("Redo logs", m.redoGroupsOk + " OK / " + m.redoGroupsProblem + " problema", "redoLogs"),
+      stat("Archivos inválidos", m.datafilesProblem, "datafilesProblem"),
+      stat("Archivos inaccesibles", m.datafilesInaccessible, "datafilesInaccessible")
     ].join("");
 
     document.getElementById("mon-ts-summary").innerHTML =
@@ -315,6 +472,43 @@
     }
   }
 
+  // Delega clic/teclado sobre cualquier contenedor de fichas (.mon-stat
+  // con data-var) hacia el modal de descripción de variables. Se usa
+  // para "Procesos y sesiones" y "Memoria (SGA / PGA)".
+  function wireVarInfoContainer(containerId) {
+    var el = document.getElementById(containerId);
+    if (!el) return;
+    el.addEventListener("click", function (e) {
+      var card = e.target.closest(".mon-stat[data-var]");
+      if (card) openVarInfo(card.getAttribute("data-var"));
+    });
+    el.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      var card = e.target.closest(".mon-stat[data-var]");
+      if (!card) return;
+      e.preventDefault();
+      openVarInfo(card.getAttribute("data-var"));
+    });
+  }
+
+  function initVarInfoModal() {
+    var backdrop = document.getElementById("mon-varinfo-backdrop");
+    var closeBtn = document.getElementById("mon-varinfo-close");
+    if (!backdrop || !closeBtn) return;
+
+    wireVarInfoContainer("mon-ip-stats");
+    wireVarInfoContainer("mon-im-stats");
+    wireVarInfoContainer("mon-ia-stats");
+
+    closeBtn.addEventListener("click", closeVarInfo);
+    backdrop.addEventListener("click", function (e) {
+      if (e.target === e.currentTarget) closeVarInfo();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeVarInfo();
+    });
+  }
+
   function init() {
     document.getElementById("mon-btn-refresh").addEventListener("click", collectAndRender);
     document.getElementById("mon-auto-refresh").addEventListener("change", startAuto);
@@ -322,6 +516,7 @@
       localStorage.removeItem(HISTORY_KEY); drawHistory([]);
     });
     window.addEventListener("resize", function () { drawHistory(loadHistory()); });
+    initVarInfoModal();
     collectAndRender();
     startAuto();
   }
