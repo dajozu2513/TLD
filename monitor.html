@@ -314,9 +314,48 @@ IA = clamp(98 − penalizaciones, 0, 100)
 
 *clamp asegura que el resultado nunca sea menor a 0 ni mayor a 100.</div>
           </details>
+          <details class="mon-ip-formula">
+            <summary>Ver umbrales del Indicador de Archivos (IA)</summary>
+            <div class="mon-ip-formula-body is-prose is-structured">
+              <p><strong>Conteos</strong> (penalizan desde la primera ocurrencia, sin escalón porcentual):</p>
+              <div class="mon-table-wrap">
+                <table class="mon-ip-table">
+                  <thead><tr><th>Variable</th><th>Penalización</th></tr></thead>
+                  <tbody>
+                    <tr><td>Archivos inaccesibles</td><td>por cada uno → −30</td></tr>
+                    <tr><td>Datafiles OFFLINE</td><td>por cada uno → −25</td></tr>
+                    <tr><td>Archivos inválidos (RECOVER)</td><td>por cada uno → −18</td></tr>
+                    <tr><td>Tablespaces críticos (≥95%)</td><td>por cada uno → −20</td></tr>
+                    <tr><td>Tablespaces en advertencia (80–94%)</td><td>por cada uno → −8</td></tr>
+                    <tr><td>Redo logs con problema</td><td>por cada uno → −15</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <p><strong>Escalonados por porcentaje:</strong></p>
+              <div class="mon-table-wrap">
+                <table class="mon-ip-table mon-status-table">
+                  <thead><tr><th>Variable</th><th>Escalón 1</th><th>Escalón 2</th><th>Escalón 3</th></tr></thead>
+                  <tbody>
+                    <tr><td>Máximo uso de tablespace (maxTablespaceUsedPct)</td><td>≥ 75% → −5</td><td>≥ 85% → −10</td><td>≥ 95% → −18</td></tr>
+                    <tr><td>Uso de TEMP (tempUsedPct)</td><td>≥ 85% → −6</td><td>≥ 95% → −12</td><td>—</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <p><strong>Justificación de la fórmula del Indicador de Archivos (IA):</strong></p>
+              <p>El IA se calcula como un puntaje base (98) del que se restan penalizaciones independientes por cada problema detectado, en lugar de una sola curva continua, porque las variables que mide no son de la misma naturaleza y no comparten una escala común.</p>
+              <p>Por un lado hay fallas discretas: un datafile es o no es inaccesible, está o no está offline, necesita o no recuperación de medios; un redo log está o no en estado anómalo. No existen estados intermedios (no hay un "60% inaccesible"), así que no tiene sentido aplicarles una curva — se penalizan por conteo, cada ocurrencia sumando su propio peso.</p>
+              <p>Por otro lado hay degradaciones graduales de espacio: qué tan lleno está un tablespace o el TEMP. Aquí sí existe un continuo, por lo que se evalúan con umbrales escalonados (75/85/95% para tablespaces, 85/95% para TEMP) que reflejan que el riesgo crece de forma no lineal a medida que se acerca al límite físico.</p>
+              <p>Combinar ambos tipos de señal en una sola fórmula continua no sería representativo: dos datafiles inaccesibles y un tablespace al 82% no guardan ninguna relación matemática entre sí como para expresarse en un mismo eje. El modelo aditivo permite que cada tipo de problema —accesibilidad de archivos, integridad de datafiles, salud de redo logs, ocupación de tablespaces y de TEMP— se evalúe y pese según su propia severidad real, y que todos se sumen al final en un solo puntaje coherente.</p>
+              <p>Las penalizaciones por conteo no tienen tope máximo porque cada objeto dañado es un punto de falla real e independiente: dos archivos inaccesibles representan literalmente el doble de archivos dañados, no una exageración de la misma señal — por eso el puntaje debe caer proporcionalmente a cuántos objetos estén comprometidos.</p>
+            </div>
+          </details>
           <div class="mon-stat-grid" id="mon-ia-stats"></div>
-          <h4 class="mon-panel-sub">Tablespaces</h4>
-          <div class="mon-ts-summary" id="mon-ts-summary"></div>
+          <div class="mon-ts-block" id="mon-ts-info-trigger" tabindex="0" role="button" aria-haspopup="dialog">
+            <h4 class="mon-panel-sub">Tablespaces <span class="mon-info-icon" aria-hidden="true">ⓘ</span></h4>
+            <div class="mon-ts-summary" id="mon-ts-summary"></div>
+          </div>
         </article>
 
       </div>

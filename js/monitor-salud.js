@@ -226,6 +226,36 @@
     datafilesInaccessible: {
       titulo: "Archivos inaccesibles",
       desc: "Datafiles cuyo encabezado Oracle no pudo leer correctamente: archivo no encontrado, dañado o sin permisos de acceso (V$DATAFILE_HEADER, columna ERROR). Es la señal más grave de las dos: el archivo ni siquiera responde."
+    },
+    tablespacesInfo: {
+      titulo: "Tablespaces",
+      desc: "Un tablespace es el contenedor lógico donde Oracle guarda los datos (tablas, índices, etc.), respaldado por uno o más datafiles físicos. Los chips de abajo (normal/advertencia/crítico) resumen, para cada tablespace por separado, la comparación entre su espacio asignado y su espacio libre.",
+      formula: "Estado por tablespace, según % de uso:\n  % uso = (espacio asignado − espacio libre) ÷ espacio asignado × 100\n\n  < 80%        → normal\n  80% – 94.9%  → advertencia\n  ≥ 95%        → crítico\n\nDatos de DBA_DATA_FILES (asignado) y DBA_FREE_SPACE (libre), por tablespace."
+    },
+    DBWn: {
+      titulo: "DBWn (Database Writer)",
+      desc: "Escribe a disco los bloques modificados (“sucios”) que están en el buffer cache, hacia los datafiles.",
+      formula: "Estado (ACTIVO/INACTIVO): presencia o ausencia en V$PROCESS en el instante de la consulta, no un umbral numérico.\n\nSELECT DISTINCT pname FROM V$PROCESS WHERE pname IS NOT NULL\n\nDBWn → ACTIVO si algún pname empieza con \"DBW\" (puede haber varios: DBW0, DBW1…). Si no aparece → INACTIVO.\n\nEs puramente informativo: no resta puntos al IP."
+    },
+    LGWR: {
+      titulo: "LGWR (Log Writer)",
+      desc: "Escribe las entradas de redo desde el buffer de redo log hacia los archivos de redo log online; es lo que hace durable un COMMIT.",
+      formula: "Estado (ACTIVO/INACTIVO): presencia o ausencia en V$PROCESS en el instante de la consulta, no un umbral numérico.\n\nSELECT DISTINCT pname FROM V$PROCESS WHERE pname IS NOT NULL\n\nLGWR → ACTIVO si algún pname = \"LGWR\". Si no aparece → INACTIVO.\n\nEs puramente informativo: no resta puntos al IP."
+    },
+    SMON: {
+      titulo: "SMON (System Monitor)",
+      desc: "Realiza la recuperación de la instancia al arrancar y limpia segmentos temporales huérfanos.",
+      formula: "Estado (ACTIVO/INACTIVO): presencia o ausencia en V$PROCESS en el instante de la consulta, no un umbral numérico.\n\nSELECT DISTINCT pname FROM V$PROCESS WHERE pname IS NOT NULL\n\nSMON → ACTIVO si algún pname = \"SMON\". Si no aparece → INACTIVO.\n\nEs puramente informativo: no resta puntos al IP."
+    },
+    PMON: {
+      titulo: "PMON (Process Monitor)",
+      desc: "Limpia lo que deja un proceso que falla: libera locks y hace rollback de sus transacciones pendientes.",
+      formula: "Estado (ACTIVO/INACTIVO): presencia o ausencia en V$PROCESS en el instante de la consulta, no un umbral numérico.\n\nSELECT DISTINCT pname FROM V$PROCESS WHERE pname IS NOT NULL\n\nPMON → ACTIVO si algún pname = \"PMON\". Si no aparece → INACTIVO.\n\nEs puramente informativo: no resta puntos al IP."
+    },
+    CKPT: {
+      titulo: "CKPT (Checkpoint)",
+      desc: "Coordina los puntos de control: avisa a DBWn cuándo escribir y actualiza los encabezados de los datafiles y el control file.",
+      formula: "Estado (ACTIVO/INACTIVO): presencia o ausencia en V$PROCESS en el instante de la consulta, no un umbral numérico.\n\nSELECT DISTINCT pname FROM V$PROCESS WHERE pname IS NOT NULL\n\nCKPT → ACTIVO si algún pname = \"CKPT\". Si no aparece → INACTIVO.\n\nEs puramente informativo: no resta puntos al IP."
     }
   };
 
@@ -293,7 +323,8 @@
     Object.keys(m.bg).forEach(function (name) {
       var st = m.bg[name];
       var cls = st === "ACTIVO" ? "bg-ok" : "bg-warn";
-      bgHtml += '<li class="mon-bg-item"><span class="mon-bg-name">' + name + '</span><span class="mon-bg-pill ' + cls + '">' + st + "</span></li>";
+      bgHtml += '<li class="mon-bg-item" data-var="' + name + '" tabindex="0" role="button" aria-haspopup="dialog">' +
+        '<span class="mon-bg-name">' + name + '</span><span class="mon-bg-pill ' + cls + '">' + st + "</span></li>";
     });
     document.getElementById("mon-bg-processes").innerHTML = bgHtml;
 
@@ -472,19 +503,19 @@
     }
   }
 
-  // Delega clic/teclado sobre cualquier contenedor de fichas (.mon-stat
-  // con data-var) hacia el modal de descripción de variables. Se usa
-  // para "Procesos y sesiones" y "Memoria (SGA / PGA)".
+  // Delega clic/teclado sobre cualquier elemento con [data-var] dentro
+  // del contenedor (fichas .mon-stat, filas de la lista de procesos de
+  // fondo, etc.) hacia el modal de descripción de variables.
   function wireVarInfoContainer(containerId) {
     var el = document.getElementById(containerId);
     if (!el) return;
     el.addEventListener("click", function (e) {
-      var card = e.target.closest(".mon-stat[data-var]");
+      var card = e.target.closest("[data-var]");
       if (card) openVarInfo(card.getAttribute("data-var"));
     });
     el.addEventListener("keydown", function (e) {
       if (e.key !== "Enter" && e.key !== " ") return;
-      var card = e.target.closest(".mon-stat[data-var]");
+      var card = e.target.closest("[data-var]");
       if (!card) return;
       e.preventDefault();
       openVarInfo(card.getAttribute("data-var"));
@@ -499,6 +530,20 @@
     wireVarInfoContainer("mon-ip-stats");
     wireVarInfoContainer("mon-im-stats");
     wireVarInfoContainer("mon-ia-stats");
+    wireVarInfoContainer("mon-bg-processes");
+
+    // "Tablespaces" no es una ficha .mon-stat sino un encabezado de
+    // subsección, así que se conecta directo en vez de vía
+    // wireVarInfoContainer (que delega sobre .mon-stat[data-var]).
+    var tsTrigger = document.getElementById("mon-ts-info-trigger");
+    if (tsTrigger) {
+      tsTrigger.addEventListener("click", function () { openVarInfo("tablespacesInfo"); });
+      tsTrigger.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        e.preventDefault();
+        openVarInfo("tablespacesInfo");
+      });
+    }
 
     closeBtn.addEventListener("click", closeVarInfo);
     backdrop.addEventListener("click", function (e) {

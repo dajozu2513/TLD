@@ -1,8 +1,8 @@
 const express = require("express");
 const { query } = require("../db/pool");
-
+ 
 const router = express.Router();
-
+ 
 // GET /api/monitor/salud
 //
 // Reemplaza la simulación local del frontend (js/monitor-salud.js) por
@@ -83,7 +83,7 @@ router.get("/salud", async (req, res) => {
       `),
       query("SELECT tablespace_name, tablespace_size, allocated_space, free_space FROM DBA_TEMP_FREE_SPACE"),
     ]);
-
+ 
     const metrics = buildMetrics({
       processCountRes,
       processParamRes,
@@ -102,7 +102,7 @@ router.get("/salud", async (req, res) => {
       tablespaceRes,
       tempRes,
     });
-
+ 
     res.json({
       instance: instanceRes.rows[0] || null,
       metrics,
@@ -119,23 +119,23 @@ router.get("/salud", async (req, res) => {
     });
   }
 });
-
+ 
 function num(v, fallback = 0) {
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
 }
-
+ 
 function pgaValue(rows, name) {
   const row = rows.find((r) => r.name === name);
   return row ? num(row.value) : 0;
 }
-
+ 
 function buildMetrics(d) {
   // ---- Procesos ----
   const processesCurrent = num(d.processCountRes.rows[0]?.c, 0);
   let processesLimit = parseLimitValue(d.processParamRes.rows[0]?.value);
   if (!processesLimit) processesLimit = 300; // fallback si el parámetro no fuera legible
-
+ 
   const statusMap = {};
   d.sessionStatusRes.rows.forEach((r) => (statusMap[r.status] = num(r.c)));
   const sessionsActive = statusMap["ACTIVE"] || 0;
@@ -144,10 +144,10 @@ function buildMetrics(d) {
   // documentó — no la mezclamos con procesos internos de Oracle.
   const sessionsCurrent = sessionsActive + sessionsInactive;
   const sessionsLimit = Math.round(processesLimit * 1.1 + 5); // fórmula por defecto de Oracle (PROCESSES → SESSIONS)
-
+ 
   const sessionsBlocked = num(d.blockedRes.rows[0]?.c, 0);
   const longOps = num(d.longOpsRes.rows[0]?.c, 0);
-
+ 
   const bgNames = new Set(d.bgProcessRes.rows.map((r) => r.pname));
   const bgStatus = (present) => (present ? "ACTIVO" : "INACTIVO");
   const bg = {
@@ -157,15 +157,15 @@ function buildMetrics(d) {
     PMON: bgStatus(bgNames.has("PMON")),
     CKPT: bgStatus(bgNames.has("CKPT")),
   };
-
+ 
   // ---- Memoria ----
   const sgaTotalMb = Math.round(num(d.sgaTotalRes.rows[0]?.bytes) / 1024 / 1024);
   const sgaFreeMb = Math.round(num(d.sgaInfoRes.rows[0]?.bytes) / 1024 / 1024);
-
+ 
   const spTotal = num(d.sharedPoolRes.rows[0]?.total);
   const spFree = num(d.sharedPoolRes.rows[0]?.free);
   const sharedPoolPct = spTotal > 0 ? Math.round(((spTotal - spFree) / spTotal) * 1000) / 10 : 0;
-
+ 
   // Nota: "bufferCachePct" aquí es el Buffer Cache Hit Ratio real
   // (V$SYSSTAT), no un "% de llenado" — el buffer cache de Oracle
   // normalmente está siempre lleno tras el arranque (LRU), así que un
@@ -178,14 +178,14 @@ function buildMetrics(d) {
   const consGets = pgaValue(d.bufferHitRes.rows, "consistent gets");
   const logicalReads = blockGets + consGets;
   const bufferCachePct = logicalReads > 0 ? Math.round((1 - physReads / logicalReads) * 1000) / 10 : 100;
-
+ 
   const pgaAllocatedMb = Math.round(pgaValue(d.pgaRes.rows, "total PGA allocated") / 1024 / 1024);
   const pgaInuseMb = Math.round(pgaValue(d.pgaRes.rows, "total PGA inuse") / 1024 / 1024);
   let pgaTargetMb = Math.round(pgaValue(d.pgaRes.rows, "aggregate PGA target parameter") / 1024 / 1024);
   if (!pgaTargetMb) pgaTargetMb = Math.max(pgaAllocatedMb, 1); // evita división entre 0 si no hay PGA_AGGREGATE_TARGET
   const pgaOverAlloc = pgaValue(d.pgaRes.rows, "over allocation count");
   const pgaCacheHitPct = pgaValue(d.pgaRes.rows, "cache hit percentage");
-
+ 
   // ---- Archivos ----
   const dfMap = {};
   d.datafileRes.rows.forEach((r) => (dfMap[r.status] = num(r.c)));
@@ -197,7 +197,7 @@ function buildMetrics(d) {
   // siquiera pudo leer el encabezado del datafile (archivo no
   // encontrado, corrupto o sin permisos).
   const datafilesInaccessible = num(d.datafileHeaderRes.rows[0]?.c, 0);
-
+ 
   const logMap = {};
   d.logRes.rows.forEach((r) => (logMap[r.status] = num(r.c)));
   const knownOkStatuses = ["CURRENT", "ACTIVE", "INACTIVE", "UNUSED"];
@@ -207,7 +207,7 @@ function buildMetrics(d) {
     if (knownOkStatuses.includes(status)) redoGroupsOk += logMap[status];
     else redoGroupsProblem += logMap[status];
   });
-
+ 
   let tablespacesNormal = 0;
   let tablespacesWarning = 0;
   let tablespacesCritical = 0;
@@ -227,7 +227,7 @@ function buildMetrics(d) {
     else tablespacesNormal++;
   });
   maxTablespaceUsedPct = Math.round(maxTablespaceUsedPct * 10) / 10;
-
+ 
   // Tamaño total de datafiles (DBA_DATA_FILES.bytes sumado): espacio en
   // disco reservado para datos, sin importar cuánto está ocupado.
   const datafilesSizeMb = Math.round(totalAllocBytes / 1024 / 1024);
@@ -237,15 +237,24 @@ function buildMetrics(d) {
   const tablespacesUsedPct = totalAllocBytes > 0
     ? Math.round(((totalAllocBytes - totalFreeBytes) / totalAllocBytes) * 1000) / 10
     : 0;
-
+ 
   let tempUsedPct = 0;
   if (d.tempRes.rows.length) {
+    // DBA_TEMP_FREE_SPACE puede reportar free_space > allocated_space en
+    // ciertos instantes (la vista no es perfectamente sincrónica con la
+    // liberación de segmentos de ordenamiento), lo que daría un % de uso
+    // negativo sin significado real. Se acota cada lectura individual a
+    // [0, 100] ANTES de promediar, para no arrastrar ese ruido al promedio
+    // ni disfrazar un tablespace realmente lleno con uno mal leído.
     const pcts = d.tempRes.rows
       .filter((t) => num(t.tablespace_size) > 0)
-      .map((t) => ((num(t.allocated_space) - num(t.free_space)) / num(t.tablespace_size)) * 100);
+      .map((t) => {
+        const pct = ((num(t.allocated_space) - num(t.free_space)) / num(t.tablespace_size)) * 100;
+        return Math.max(0, Math.min(100, pct));
+      });
     tempUsedPct = pcts.length ? Math.round((pcts.reduce((a, b) => a + b, 0) / pcts.length) * 10) / 10 : 0;
   }
-
+ 
   return {
     processesCurrent,
     processesLimit,
@@ -280,7 +289,7 @@ function buildMetrics(d) {
     bg,
   };
 }
-
+ 
 // V$RESOURCE_LIMIT.LIMIT_VALUE es VARCHAR2: puede venir 'UNLIMITED' o un número como texto.
 function parseLimitValue(raw) {
   if (raw === null || raw === undefined) return null;
@@ -288,5 +297,7 @@ function parseLimitValue(raw) {
   const n = parseInt(raw, 10);
   return Number.isFinite(n) && n > 0 ? n : null;
 }
-
+ 
 module.exports = router;
+
+
