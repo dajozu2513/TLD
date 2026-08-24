@@ -293,6 +293,23 @@
     document.getElementById("mon-isbd-value").textContent = isbd.toFixed(2);
     setBadge(document.getElementById("mon-isbd-status"), stISBD);
     document.getElementById("mon-isbd-card").className = "mon-isbd " + stISBD.cls;
+    // Mostrar Causas si hay alertas críticas
+var causasBox = document.getElementById("mon-isbd-causas");
+var causasList = document.getElementById("mon-isbd-causas-list");
+if (causasBox && causasList) {
+  var criticas = (alerts || []).filter(function (a) {
+    return a.nivel === "critico";
+  });
+  if (criticas.length > 0) {
+    causasList.innerHTML = criticas.map(function (a) {
+      return "<li>" + a.componente + " · " + a.variable + "</li>";
+    }).join("");
+    causasBox.hidden = false;
+  } else {
+    causasList.innerHTML = "";
+    causasBox.hidden = true;
+  }
+}
 
     var stIP = statusFromScore(ip.score);
     var stIM = statusFromScore(im.score);
