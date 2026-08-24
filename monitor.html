@@ -32,21 +32,21 @@
       </span>
     </a>
     <nav class="main-nav" id="main-nav">
-      <a href="index.html#servicios">Servicios</a>
-      <a href="index.html#nosotros">Nosotros</a>
-      <a href="index.html#proceso">Proceso</a>
-      <a href="index.html#equipo">Equipo</a>
-      <a href="index.html#contacto" class="nav-cta">Contáctanos</a>
-      <div class="lang-toggle" role="group">
+      <a href="index.html#servicios" data-i18n="nav_services">Servicios</a>
+      <a href="index.html#nosotros" data-i18n="nav_about">Nosotros</a>
+      <a href="index.html#proceso" data-i18n="nav_process">Proceso</a>
+      <a href="index.html#equipo" data-i18n="nav_team">Equipo</a>
+      <a href="index.html#contacto" class="nav-cta" data-i18n="nav_contact">Contáctanos</a>
+      <div class="lang-toggle" role="group" aria-label="Selector de idioma / Language selector">
         <button type="button" class="lang-btn is-active" id="langEs" data-lang="es">ES</button>
         <button type="button" class="lang-btn" id="langEn" data-lang="en">EN</button>
       </div>
       <div class="account-box" id="accountBox">
         <span class="account-label" id="accountLabel"></span>
-        <button type="button" class="account-logout" id="logoutBtn">Salir</button>
+        <button type="button" class="account-logout" id="logoutBtn" data-i18n="account_logout">Salir</button>
       </div>
     </nav>
-    <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" data-i18n-aria="nav_toggle_aria" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
   </div>
@@ -56,24 +56,24 @@
   <section class="section mon-page">
     <div class="container">
 
-      <a href="index.html" class="back-link">&larr; Volver al inicio</a>
+      <a href="index.html" class="back-link">&larr; <span data-i18n="back_to_home">Volver al inicio</span></a>
 
       <div class="mon-hero">
-        <div>
-          <p class="eyebrow">Herramienta de monitoreo</p>
-          <h1 class="mon-title">Monitor de Salud Oracle</h1>
-          <p class="mon-subtitle">Procesos · Memoria · Archivos → Índice ISBD y alertas en tiempo real</p>
+        <div class="mon-hero-copy">
+          <p class="eyebrow" data-i18n="mon_eyebrow">Herramienta de monitoreo</p>
+          <h1 class="mon-title" data-i18n="mon_title">Monitor de Salud Oracle</h1>
+          <p class="mon-subtitle" data-i18n="mon_subtitle">Procesos · Memoria · Archivos → Índice ISBD y alertas en tiempo real</p>
         </div>
         <div class="mon-hero-actions">
           <select id="mon-instance" class="mon-select">
-            <option value="sim-healthy">ORCL — Saludable</option>
-            <option value="sim-warning" selected>ORCL — Con advertencias</option>
-            <option value="sim-critical">ORCL — Crítico</option>
-            <option value="sim-random">ORCL — Aleatorio</option>
+            <option value="sim-healthy" data-i18n="mon_opt_healthy">ORCL — Saludable</option>
+            <option value="sim-warning" selected data-i18n="mon_opt_warning">ORCL — Con advertencias</option>
+            <option value="sim-critical" data-i18n="mon_opt_critical">ORCL — Crítico</option>
+            <option value="sim-random" data-i18n="mon_opt_random">ORCL — Aleatorio</option>
           </select>
-          <button type="button" class="btn btn-primary" id="mon-btn-refresh">Actualizar ahora</button>
+          <button type="button" class="btn btn-primary" id="mon-btn-refresh" data-i18n="mon_btn_refresh">Actualizar ahora</button>
           <label class="mon-auto-label">
-            <input type="checkbox" id="mon-auto-refresh" checked> Auto 15s
+            <input type="checkbox" id="mon-auto-refresh" checked> <span data-i18n="mon_auto_label">Auto 15s</span>
           </label>
         </div>
       </div>
@@ -83,14 +83,14 @@
       <!-- ISBD principal -->
       <div class="mon-isbd" id="mon-isbd-card">
         <div class="mon-isbd-left">
-          <span class="mon-isbd-label">Índice de Salud de la Base de Datos (ISBD)</span>
+          <span class="mon-isbd-label" data-i18n="mon_isbd_label">Índice de Salud de la Base de Datos (ISBD)</span>
           <div class="mon-isbd-number" id="mon-isbd-value">—</div>
           <span class="mon-badge" id="mon-isbd-status">—</span>
         </div>
         <div class="mon-isbd-right">
-          <div class="mon-weight"><span>Procesos</span><strong>30%</strong></div>
-          <div class="mon-weight"><span>Memoria</span><strong>35%</strong></div>
-          <div class="mon-weight"><span>Archivos</span><strong>35%</strong></div>
+          <div class="mon-weight"><span data-i18n="mon_weight_processes">Procesos</span><strong>30%</strong></div>
+          <div class="mon-weight"><span data-i18n="mon_weight_memory">Memoria</span><strong>35%</strong></div>
+          <div class="mon-weight"><span data-i18n="mon_weight_files">Archivos</span><strong>35%</strong></div>
           <p class="mon-formula">ISBD = 0.30×IP + 0.35×IM + 0.35×IA</p>
         </div>
       </div>
@@ -99,7 +99,7 @@
       <div class="mon-kpi-row">
         <div class="mon-kpi" id="mon-kpi-ip">
           <div class="mon-kpi-top">
-            <span class="mon-kpi-name">Indicador de Procesos (IP)</span>
+            <span class="mon-kpi-name" data-i18n="mon_kpi_ip">Indicador de Procesos (IP)</span>
             <span class="mon-badge" id="mon-ip-status">—</span>
           </div>
           <div class="mon-kpi-value" id="mon-ip-score">—</div>
@@ -107,7 +107,7 @@
         </div>
         <div class="mon-kpi" id="mon-kpi-im">
           <div class="mon-kpi-top">
-            <span class="mon-kpi-name">Indicador de Memoria (IM)</span>
+            <span class="mon-kpi-name" data-i18n="mon_kpi_im">Indicador de Memoria (IM)</span>
             <span class="mon-badge" id="mon-im-status">—</span>
           </div>
           <div class="mon-kpi-value" id="mon-im-score">—</div>
@@ -115,7 +115,7 @@
         </div>
         <div class="mon-kpi" id="mon-kpi-ia">
           <div class="mon-kpi-top">
-            <span class="mon-kpi-name">Indicador de Archivos (IA)</span>
+            <span class="mon-kpi-name" data-i18n="mon_kpi_ia">Indicador de Archivos (IA)</span>
             <span class="mon-badge" id="mon-ia-status">—</span>
           </div>
           <div class="mon-kpi-value" id="mon-ia-score">—</div>
@@ -127,23 +127,23 @@
       <div class="mon-detail-grid">
 
         <article class="mon-panel">
-          <h3 class="mon-panel-title">Procesos y sesiones</h3>
+          <h3 class="mon-panel-title" data-i18n="mon_panel_processes">Procesos y sesiones</h3>
           <div class="mon-stat-grid" id="mon-ip-stats"></div>
-          <h4 class="mon-panel-sub">Procesos de fondo Oracle</h4>
+          <h4 class="mon-panel-sub" data-i18n="mon_panel_bg">Procesos de fondo Oracle</h4>
           <ul class="mon-bg-list" id="mon-bg-processes"></ul>
         </article>
 
         <article class="mon-panel">
-          <h3 class="mon-panel-title">Memoria (SGA / PGA)</h3>
+          <h3 class="mon-panel-title" data-i18n="mon_panel_memory">Memoria (SGA / PGA)</h3>
           <div class="mon-stat-grid" id="mon-im-stats"></div>
-          <h4 class="mon-panel-sub">Uso visual</h4>
+          <h4 class="mon-panel-sub" data-i18n="mon_panel_visual">Uso visual</h4>
           <div class="mon-mem-bars" id="mon-mem-bars"></div>
         </article>
 
         <article class="mon-panel">
-          <h3 class="mon-panel-title">Archivos y almacenamiento</h3>
+          <h3 class="mon-panel-title" data-i18n="mon_panel_files">Archivos y almacenamiento</h3>
           <div class="mon-stat-grid" id="mon-ia-stats"></div>
-          <h4 class="mon-panel-sub">Tablespaces</h4>
+          <h4 class="mon-panel-sub" data-i18n="mon_panel_tablespaces">Tablespaces</h4>
           <div class="mon-ts-summary" id="mon-ts-summary"></div>
         </article>
 
@@ -153,7 +153,7 @@
       <div class="mon-bottom">
         <article class="mon-panel mon-alerts-panel">
           <div class="mon-panel-head">
-            <h3 class="mon-panel-title">Alertas activas</h3>
+            <h3 class="mon-panel-title" data-i18n="mon_panel_alerts">Alertas activas</h3>
             <span class="mon-count" id="mon-alert-count">0</span>
           </div>
           <ul class="mon-alert-list" id="mon-alerts-list"></ul>
@@ -161,17 +161,17 @@
 
         <article class="mon-panel mon-history-panel">
           <div class="mon-panel-head">
-            <h3 class="mon-panel-title">Evolución del ISBD</h3>
-            <button type="button" class="btn btn-ghost mon-btn-sm" id="mon-btn-clear-history">Limpiar historial</button>
+            <h3 class="mon-panel-title" data-i18n="mon_panel_history">Evolución del ISBD</h3>
+            <button type="button" class="btn btn-ghost mon-btn-sm" id="mon-btn-clear-history" data-i18n="mon_btn_clear_history">Limpiar historial</button>
           </div>
           <div class="mon-chart-wrap">
             <canvas id="mon-canvas" width="640" height="200"></canvas>
           </div>
-          <p class="mon-note">Últimas 40 mediciones guardadas en este navegador.</p>
+          <p class="mon-note" data-i18n="mon_history_note">Últimas 40 mediciones guardadas en este navegador.</p>
         </article>
       </div>
 
-      <div class="mon-footnote">
+      <div class="mon-footnote" data-i18n-html="mon_footnote">
         <strong>Modo actual:</strong> simulación local con métricas inspiradas en vistas Oracle
         (<code>V$PROCESS</code>, <code>V$SESSION</code>, <code>V$RESOURCE_LIMIT</code>, <code>V$SGA</code>,
         <code>V$PGASTAT</code>, <code>V$DATAFILE</code>, <code>V$LOG</code>).
@@ -191,11 +191,11 @@
         <small>Database Consulting</small>
       </span>
     </a>
-    <p class="footer-copy">&copy; <span id="year"></span> Three Little Ducks Database Consulting.</p>
+    <p class="footer-copy">&copy; <span id="year"></span> Three Little Ducks Database Consulting. <span data-i18n="footer_rights">Todos los derechos reservados.</span></p>
   </div>
 </footer>
 
-<button class="scroll-top" id="scrollTop" aria-label="Volver arriba">↑</button>
+<button class="scroll-top" id="scrollTop" aria-label="Volver arriba" data-i18n-aria="scroll_top_aria">↑</button>
 
 <script src="js/i18n.js"></script>
 <script src="js/auth.js"></script>

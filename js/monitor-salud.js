@@ -10,6 +10,118 @@
   var MAX_HISTORY = 40;
   var REFRESH_MS = 15000;
   var autoTimer = null;
+  var lastResult = null; // { ip, im, ia, isbd, alerts, ts } — para re-renderizar sin resimular al cambiar idioma
+
+  // ---------- Textos bilingües (separado de TLD_TRANSLATIONS, solo sincronizado vía tld:langchange) ----------
+  var STR = {
+    es: {
+      updated: "Actualizado: ",
+      statusLabels: {
+        optimo: "Óptimo", saludable: "Saludable", advertencia: "Advertencia",
+        degradado: "Degradado", critico: "Crítico", criticoAlerta: "Crítico (alerta activa)"
+      },
+      bgStatus: { activo: "ACTIVO", advertencia: "ADVERTENCIA" },
+      stats: {
+        procesosActuales: "Procesos actuales", limiteProcesos: "Límite procesos", utilizacion: "Utilización",
+        sesiones: "Sesiones", activas: "Activas", inactivas: "Inactivas", bloqueadas: "Bloqueadas", longOps: "Long ops",
+        sgaTotal: "SGA total", sgaLibre: "SGA libre", usoSga: "Uso SGA", sharedPool: "Shared Pool", bufferCache: "Buffer Cache",
+        pgaUso: "PGA en uso", pgaOverAlloc: "PGA over-alloc", pgaCacheHit: "PGA cache hit",
+        datafilesOnline: "Datafiles ONLINE", datafilesOffline: "Datafiles OFFLINE", conProblemas: "Con problemas",
+        tsNormales: "TS normales", tsAdvertencia: "TS advertencia", tsCriticos: "TS críticos",
+        maxUsoTs: "Máx. uso TS", usoTemp: "Uso TEMP", redoOkProblema: "Redo OK / problema"
+      },
+      tsChips: { normales: "normales", advertencia: "advertencia", criticos: "críticos" },
+      chartMinData: "Se necesitan al menos 2 mediciones para graficar.",
+      alertEmpty: "Sin alertas. Todos los componentes en rangos aceptables.",
+      alertValor: "Valor: ",
+      alertUmbral: " · Umbral: ",
+      alertComponentes: { procesos: "Procesos", memoria: "Memoria", archivos: "Archivos" },
+      alertVariables: {
+        sesiones_bloqueadas: "Sesiones bloqueadas", util_procesos: "Utilización procesos", long_ops: "Long ops",
+        pga_over_alloc: "PGA over-alloc", pga_cache_hit: "PGA cache hit", uso_sga: "Uso SGA",
+        datafiles_offline: "Datafiles OFFLINE", datafiles_problema: "Datafiles problema",
+        ts_criticos: "TS críticos", ts_advertencia: "TS advertencia", max_uso_ts: "Máx. uso TS",
+        uso_temp: "Uso TEMP", redo_logs: "Redo logs"
+      },
+      alertNivelLabels: { critico: "CRÍTICO", alto: "ALTO", advertencia: "ADVERTENCIA" },
+      alertDesc: {
+        sesiones_bloqueadas: function (p) { return "Existen " + p.n + " sesión(es) bloqueada(s). Revisar V$WAIT_CHAINS."; },
+        util_procesos_95: function () { return "Procesos cerca del límite (PROCESSES)."; },
+        util_procesos_85: function () { return "Utilización alta de procesos."; },
+        util_procesos_70: function () { return "Utilización en zona de advertencia."; },
+        long_ops: function (p) { return p.n + " operación(es) prolongada(s) (V$SESSION_LONGOPS)."; },
+        pga_over_alloc_high: function () { return "PGA con sobre-asignación."; },
+        pga_over_alloc_some: function () { return "Se detectaron over-allocations de PGA."; },
+        pga_cache_hit_crit: function () { return "Cache hit de PGA muy bajo."; },
+        pga_cache_hit_warn: function () { return "Cache hit de PGA por debajo del deseable."; },
+        uso_sga_high: function () { return "SGA con muy poco espacio libre."; },
+        datafiles_offline: function (p) { return p.n + " datafile(s) OFFLINE."; },
+        datafiles_problema: function () { return "Datafiles con problemas de acceso."; },
+        ts_criticos: function (p) { return p.n + " tablespace(s) críticos."; },
+        ts_advertencia: function (p) { return p.n + " tablespace(s) próximos al límite."; },
+        max_uso_ts: function () { return "Tablespace supera 95% de uso."; },
+        uso_temp: function () { return "Tablespace temporal elevado."; },
+        redo_logs: function () { return "Problemas en grupos de redo log."; }
+      }
+    },
+    en: {
+      updated: "Updated: ",
+      statusLabels: {
+        optimo: "Optimal", saludable: "Healthy", advertencia: "Warning",
+        degradado: "Degraded", critico: "Critical", criticoAlerta: "Critical (active alert)"
+      },
+      bgStatus: { activo: "ACTIVE", advertencia: "WARNING" },
+      stats: {
+        procesosActuales: "Current processes", limiteProcesos: "Process limit", utilizacion: "Utilization",
+        sesiones: "Sessions", activas: "Active", inactivas: "Inactive", bloqueadas: "Blocked", longOps: "Long ops",
+        sgaTotal: "Total SGA", sgaLibre: "Free SGA", usoSga: "SGA usage", sharedPool: "Shared Pool", bufferCache: "Buffer Cache",
+        pgaUso: "PGA in use", pgaOverAlloc: "PGA over-alloc", pgaCacheHit: "PGA cache hit",
+        datafilesOnline: "Datafiles ONLINE", datafilesOffline: "Datafiles OFFLINE", conProblemas: "With issues",
+        tsNormales: "Normal TS", tsAdvertencia: "Warning TS", tsCriticos: "Critical TS",
+        maxUsoTs: "Max TS usage", usoTemp: "TEMP usage", redoOkProblema: "Redo OK / issue"
+      },
+      tsChips: { normales: "normal", advertencia: "warning", criticos: "critical" },
+      chartMinData: "At least 2 readings are needed to plot the chart.",
+      alertEmpty: "No alerts. All components within acceptable ranges.",
+      alertValor: "Value: ",
+      alertUmbral: " · Threshold: ",
+      alertComponentes: { procesos: "Processes", memoria: "Memory", archivos: "Files" },
+      alertVariables: {
+        sesiones_bloqueadas: "Blocked sessions", util_procesos: "Process utilization", long_ops: "Long ops",
+        pga_over_alloc: "PGA over-alloc", pga_cache_hit: "PGA cache hit", uso_sga: "SGA usage",
+        datafiles_offline: "Datafiles OFFLINE", datafiles_problema: "Datafiles issue",
+        ts_criticos: "Critical TS", ts_advertencia: "Warning TS", max_uso_ts: "Max TS usage",
+        uso_temp: "TEMP usage", redo_logs: "Redo logs"
+      },
+      alertNivelLabels: { critico: "CRITICAL", alto: "HIGH", advertencia: "WARNING" },
+      alertDesc: {
+        sesiones_bloqueadas: function (p) { return "There " + (p.n === 1 ? "is" : "are") + " " + p.n + " blocked session(s). Check V$WAIT_CHAINS."; },
+        util_procesos_95: function () { return "Processes near the limit (PROCESSES)."; },
+        util_procesos_85: function () { return "High process utilization."; },
+        util_procesos_70: function () { return "Utilization in warning range."; },
+        long_ops: function (p) { return p.n + " long-running operation(s) (V$SESSION_LONGOPS)."; },
+        pga_over_alloc_high: function () { return "PGA over-allocated."; },
+        pga_over_alloc_some: function () { return "PGA over-allocations detected."; },
+        pga_cache_hit_crit: function () { return "PGA cache hit rate very low."; },
+        pga_cache_hit_warn: function () { return "PGA cache hit rate below the desired level."; },
+        uso_sga_high: function () { return "SGA has very little free space."; },
+        datafiles_offline: function (p) { return p.n + " datafile(s) OFFLINE."; },
+        datafiles_problema: function () { return "Datafiles with access issues."; },
+        ts_criticos: function (p) { return p.n + " critical tablespace(s)."; },
+        ts_advertencia: function (p) { return p.n + " tablespace(s) nearing the limit."; },
+        max_uso_ts: function () { return "Tablespace usage exceeds 95%."; },
+        uso_temp: function () { return "TEMP tablespace usage is high."; },
+        redo_logs: function () { return "Issues in redo log groups."; }
+      }
+    }
+  };
+
+  function curLang() {
+    return (typeof TLD_I18N !== "undefined" && TLD_I18N.getLang) ? TLD_I18N.getLang() : "es";
+  }
+  function tr() {
+    return STR[curLang()] || STR.es;
+  }
 
   function rand(a, b) { return a + Math.random() * (b - a); }
   function randInt(a, b) { return Math.floor(rand(a, b + 1)); }
@@ -29,7 +141,7 @@
       tablespacesNormal: 12, tablespacesWarning: 0, tablespacesCritical: 0,
       tempUsedPct: 22, redoGroupsOk: 6, redoGroupsProblem: 0,
       maxTablespaceUsedPct: 58,
-      bg: { DBWn: "ACTIVO", LGWR: "ACTIVO", SMON: "ACTIVO", PMON: "ACTIVO", CKPT: "ACTIVO" }
+      bg: { DBWn: "activo", LGWR: "activo", SMON: "activo", PMON: "activo", CKPT: "activo" }
     };
   }
 
@@ -50,7 +162,7 @@
       out.datafilesOffline = 1; out.datafilesProblem = 1;
       out.tablespacesWarning = 3; out.tablespacesCritical = 1;
       out.tempUsedPct = 94; out.redoGroupsProblem = 1; out.maxTablespaceUsedPct = 97;
-      out.bg.SMON = "ADVERTENCIA";
+      out.bg.SMON = "advertencia";
     } else if (scenario === "sim-random") {
       out.processesCurrent = randInt(40, 295);
       out.sessionsCurrent = randInt(50, 460);
@@ -118,39 +230,39 @@
   }
 
   function statusFromScore(score) {
-    if (score >= 90) return { key: "optimo", label: "Óptimo", cls: "st-optimo" };
-    if (score >= 75) return { key: "saludable", label: "Saludable", cls: "st-saludable" };
-    if (score >= 60) return { key: "advertencia", label: "Advertencia", cls: "st-advertencia" };
-    if (score >= 40) return { key: "degradado", label: "Degradado", cls: "st-degradado" };
-    return { key: "critico", label: "Crítico", cls: "st-critico" };
+    if (score >= 90) return { key: "optimo", cls: "st-optimo" };
+    if (score >= 75) return { key: "saludable", cls: "st-saludable" };
+    if (score >= 60) return { key: "advertencia", cls: "st-advertencia" };
+    if (score >= 40) return { key: "degradado", cls: "st-degradado" };
+    return { key: "critico", cls: "st-critico" };
   }
 
   function buildAlerts(m, ip, im) {
     var alerts = [];
-    if (m.sessionsBlocked > 0) alerts.push({ nivel: "critico", componente: "Procesos", variable: "Sesiones bloqueadas", valor: m.sessionsBlocked, umbral: 0, descripcion: "Existen " + m.sessionsBlocked + " sesión(es) bloqueada(s). Revisar V$WAIT_CHAINS." });
-    if (ip.utilProc >= 95) alerts.push({ nivel: "critico", componente: "Procesos", variable: "Utilización procesos", valor: ip.utilProc + "%", umbral: "95%", descripcion: "Procesos cerca del límite (PROCESSES)." });
-    else if (ip.utilProc >= 85) alerts.push({ nivel: "alto", componente: "Procesos", variable: "Utilización procesos", valor: ip.utilProc + "%", umbral: "85%", descripcion: "Utilización alta de procesos." });
-    else if (ip.utilProc >= 70) alerts.push({ nivel: "advertencia", componente: "Procesos", variable: "Utilización procesos", valor: ip.utilProc + "%", umbral: "70%", descripcion: "Utilización en zona de advertencia." });
-    if (m.longOps > 0) alerts.push({ nivel: m.longOps >= 3 ? "alto" : "advertencia", componente: "Procesos", variable: "Long ops", valor: m.longOps, umbral: 0, descripcion: m.longOps + " operación(es) prolongada(s) (V$SESSION_LONGOPS)." });
-    if (m.pgaOverAlloc > 5) alerts.push({ nivel: m.pgaOverAlloc > 20 ? "critico" : "alto", componente: "Memoria", variable: "PGA over-alloc", valor: m.pgaOverAlloc, umbral: 0, descripcion: "PGA con sobre-asignación." });
-    else if (m.pgaOverAlloc > 0) alerts.push({ nivel: "advertencia", componente: "Memoria", variable: "PGA over-alloc", valor: m.pgaOverAlloc, umbral: 0, descripcion: "Se detectaron over-allocations de PGA." });
-    if (m.pgaCacheHitPct < 70) alerts.push({ nivel: "critico", componente: "Memoria", variable: "PGA cache hit", valor: m.pgaCacheHitPct.toFixed(1) + "%", umbral: "70%", descripcion: "Cache hit de PGA muy bajo." });
-    else if (m.pgaCacheHitPct < 85) alerts.push({ nivel: "advertencia", componente: "Memoria", variable: "PGA cache hit", valor: m.pgaCacheHitPct.toFixed(1) + "%", umbral: "85%", descripcion: "Cache hit de PGA por debajo del deseable." });
-    if (im.sgaUsedPct > 95) alerts.push({ nivel: "alto", componente: "Memoria", variable: "Uso SGA", valor: im.sgaUsedPct + "%", umbral: "95%", descripcion: "SGA con muy poco espacio libre." });
-    if (m.datafilesOffline > 0) alerts.push({ nivel: "critico", componente: "Archivos", variable: "Datafiles OFFLINE", valor: m.datafilesOffline, umbral: 0, descripcion: m.datafilesOffline + " datafile(s) OFFLINE." });
-    if (m.datafilesProblem > 0) alerts.push({ nivel: "critico", componente: "Archivos", variable: "Datafiles problema", valor: m.datafilesProblem, umbral: 0, descripcion: "Datafiles con problemas de acceso." });
-    if (m.tablespacesCritical > 0) alerts.push({ nivel: "critico", componente: "Archivos", variable: "TS críticos", valor: m.tablespacesCritical, umbral: 0, descripcion: m.tablespacesCritical + " tablespace(s) críticos." });
-    else if (m.tablespacesWarning > 0) alerts.push({ nivel: "advertencia", componente: "Archivos", variable: "TS advertencia", valor: m.tablespacesWarning, umbral: 0, descripcion: m.tablespacesWarning + " tablespace(s) próximos al límite." });
-    if (m.maxTablespaceUsedPct >= 95) alerts.push({ nivel: "critico", componente: "Archivos", variable: "Máx. uso TS", valor: m.maxTablespaceUsedPct.toFixed(0) + "%", umbral: "95%", descripcion: "Tablespace supera 95% de uso." });
-    if (m.tempUsedPct >= 90) alerts.push({ nivel: m.tempUsedPct >= 95 ? "critico" : "alto", componente: "Archivos", variable: "Uso TEMP", valor: m.tempUsedPct.toFixed(0) + "%", umbral: "90%", descripcion: "Tablespace temporal elevado." });
-    if (m.redoGroupsProblem > 0) alerts.push({ nivel: "critico", componente: "Archivos", variable: "Redo logs", valor: m.redoGroupsProblem, umbral: 0, descripcion: "Problemas en grupos de redo log." });
+    if (m.sessionsBlocked > 0) alerts.push({ nivel: "critico", componente: "procesos", variable: "sesiones_bloqueadas", descKey: "sesiones_bloqueadas", params: { n: m.sessionsBlocked }, valor: m.sessionsBlocked, umbral: 0 });
+    if (ip.utilProc >= 95) alerts.push({ nivel: "critico", componente: "procesos", variable: "util_procesos", descKey: "util_procesos_95", params: {}, valor: ip.utilProc + "%", umbral: "95%" });
+    else if (ip.utilProc >= 85) alerts.push({ nivel: "alto", componente: "procesos", variable: "util_procesos", descKey: "util_procesos_85", params: {}, valor: ip.utilProc + "%", umbral: "85%" });
+    else if (ip.utilProc >= 70) alerts.push({ nivel: "advertencia", componente: "procesos", variable: "util_procesos", descKey: "util_procesos_70", params: {}, valor: ip.utilProc + "%", umbral: "70%" });
+    if (m.longOps > 0) alerts.push({ nivel: m.longOps >= 3 ? "alto" : "advertencia", componente: "procesos", variable: "long_ops", descKey: "long_ops", params: { n: m.longOps }, valor: m.longOps, umbral: 0 });
+    if (m.pgaOverAlloc > 5) alerts.push({ nivel: m.pgaOverAlloc > 20 ? "critico" : "alto", componente: "memoria", variable: "pga_over_alloc", descKey: "pga_over_alloc_high", params: {}, valor: m.pgaOverAlloc, umbral: 0 });
+    else if (m.pgaOverAlloc > 0) alerts.push({ nivel: "advertencia", componente: "memoria", variable: "pga_over_alloc", descKey: "pga_over_alloc_some", params: {}, valor: m.pgaOverAlloc, umbral: 0 });
+    if (m.pgaCacheHitPct < 70) alerts.push({ nivel: "critico", componente: "memoria", variable: "pga_cache_hit", descKey: "pga_cache_hit_crit", params: {}, valor: m.pgaCacheHitPct.toFixed(1) + "%", umbral: "70%" });
+    else if (m.pgaCacheHitPct < 85) alerts.push({ nivel: "advertencia", componente: "memoria", variable: "pga_cache_hit", descKey: "pga_cache_hit_warn", params: {}, valor: m.pgaCacheHitPct.toFixed(1) + "%", umbral: "85%" });
+    if (im.sgaUsedPct > 95) alerts.push({ nivel: "alto", componente: "memoria", variable: "uso_sga", descKey: "uso_sga_high", params: {}, valor: im.sgaUsedPct + "%", umbral: "95%" });
+    if (m.datafilesOffline > 0) alerts.push({ nivel: "critico", componente: "archivos", variable: "datafiles_offline", descKey: "datafiles_offline", params: { n: m.datafilesOffline }, valor: m.datafilesOffline, umbral: 0 });
+    if (m.datafilesProblem > 0) alerts.push({ nivel: "critico", componente: "archivos", variable: "datafiles_problema", descKey: "datafiles_problema", params: {}, valor: m.datafilesProblem, umbral: 0 });
+    if (m.tablespacesCritical > 0) alerts.push({ nivel: "critico", componente: "archivos", variable: "ts_criticos", descKey: "ts_criticos", params: { n: m.tablespacesCritical }, valor: m.tablespacesCritical, umbral: 0 });
+    else if (m.tablespacesWarning > 0) alerts.push({ nivel: "advertencia", componente: "archivos", variable: "ts_advertencia", descKey: "ts_advertencia", params: { n: m.tablespacesWarning }, valor: m.tablespacesWarning, umbral: 0 });
+    if (m.maxTablespaceUsedPct >= 95) alerts.push({ nivel: "critico", componente: "archivos", variable: "max_uso_ts", descKey: "max_uso_ts", params: {}, valor: m.maxTablespaceUsedPct.toFixed(0) + "%", umbral: "95%" });
+    if (m.tempUsedPct >= 90) alerts.push({ nivel: m.tempUsedPct >= 95 ? "critico" : "alto", componente: "archivos", variable: "uso_temp", descKey: "uso_temp", params: {}, valor: m.tempUsedPct.toFixed(0) + "%", umbral: "90%" });
+    if (m.redoGroupsProblem > 0) alerts.push({ nivel: "critico", componente: "archivos", variable: "redo_logs", descKey: "redo_logs", params: {}, valor: m.redoGroupsProblem, umbral: 0 });
     var order = { critico: 0, alto: 1, advertencia: 2 };
     alerts.sort(function (a, b) { return (order[a.nivel] || 9) - (order[b.nivel] || 9); });
     return alerts;
   }
 
-  function setBadge(el, st) {
-    el.textContent = st.label;
+  function setBadge(el, st, S) {
+    el.textContent = S.statusLabels[st.key] || st.key;
     el.className = "mon-badge " + st.cls;
   }
 
@@ -166,13 +278,20 @@
   }
 
   function renderAll(ip, im, ia, isbd, alerts) {
+    var S = tr();
     var m = ip.details;
     var stISBD = statusFromScore(isbd);
     var hasCrit = alerts.some(function (a) { return a.nivel === "critico"; });
-    if (hasCrit && isbd >= 60) stISBD = { key: "critico", label: "Crítico (alerta activa)", cls: "st-critico" };
+    var isbdLabel = S.statusLabels[stISBD.key];
+    if (hasCrit && isbd >= 60) {
+      stISBD = { key: "critico", cls: "st-critico" };
+      isbdLabel = S.statusLabels.criticoAlerta;
+    }
 
     document.getElementById("mon-isbd-value").textContent = isbd.toFixed(2);
-    setBadge(document.getElementById("mon-isbd-status"), stISBD);
+    var isbdStatusEl = document.getElementById("mon-isbd-status");
+    isbdStatusEl.textContent = isbdLabel;
+    isbdStatusEl.className = "mon-badge " + stISBD.cls;
     document.getElementById("mon-isbd-card").className = "mon-isbd " + stISBD.cls;
 
     var stIP = statusFromScore(ip.score);
@@ -182,41 +301,42 @@
     document.getElementById("mon-ip-score").textContent = ip.score.toFixed(1);
     document.getElementById("mon-im-score").textContent = im.score.toFixed(1);
     document.getElementById("mon-ia-score").textContent = ia.score.toFixed(1);
-    setBadge(document.getElementById("mon-ip-status"), stIP);
-    setBadge(document.getElementById("mon-im-status"), stIM);
-    setBadge(document.getElementById("mon-ia-status"), stIA);
+    setBadge(document.getElementById("mon-ip-status"), stIP, S);
+    setBadge(document.getElementById("mon-im-status"), stIM, S);
+    setBadge(document.getElementById("mon-ia-status"), stIA, S);
     setBar("mon-ip-bar", ip.score, stIP.cls);
     setBar("mon-im-bar", im.score, stIM.cls);
     setBar("mon-ia-bar", ia.score, stIA.cls);
 
     document.getElementById("mon-ip-stats").innerHTML = [
-      stat("Procesos actuales", m.processesCurrent),
-      stat("Límite procesos", m.processesLimit),
-      stat("Utilización", ip.utilProc + "%"),
-      stat("Sesiones", m.sessionsCurrent),
-      stat("Activas", m.sessionsActive),
-      stat("Inactivas", m.sessionsInactive),
-      stat("Bloqueadas", m.sessionsBlocked),
-      stat("Long ops", m.longOps)
+      stat(S.stats.procesosActuales, m.processesCurrent),
+      stat(S.stats.limiteProcesos, m.processesLimit),
+      stat(S.stats.utilizacion, ip.utilProc + "%"),
+      stat(S.stats.sesiones, m.sessionsCurrent),
+      stat(S.stats.activas, m.sessionsActive),
+      stat(S.stats.inactivas, m.sessionsInactive),
+      stat(S.stats.bloqueadas, m.sessionsBlocked),
+      stat(S.stats.longOps, m.longOps)
     ].join("");
 
     var bgHtml = "";
     Object.keys(m.bg).forEach(function (name) {
-      var st = m.bg[name];
-      var cls = st === "ACTIVO" ? "bg-ok" : "bg-warn";
-      bgHtml += '<li class="mon-bg-item"><span class="mon-bg-name">' + name + '</span><span class="mon-bg-pill ' + cls + '">' + st + "</span></li>";
+      var stKey = m.bg[name];
+      var cls = stKey === "activo" ? "bg-ok" : "bg-warn";
+      var label = S.bgStatus[stKey] || String(stKey).toUpperCase();
+      bgHtml += '<li class="mon-bg-item"><span class="mon-bg-name">' + name + '</span><span class="mon-bg-pill ' + cls + '">' + label + "</span></li>";
     });
     document.getElementById("mon-bg-processes").innerHTML = bgHtml;
 
     document.getElementById("mon-im-stats").innerHTML = [
-      stat("SGA total", m.sgaTotalMb + " MB"),
-      stat("SGA libre", m.sgaFreeMb + " MB"),
-      stat("Uso SGA", im.sgaUsedPct + "%"),
-      stat("Shared Pool", m.sharedPoolPct.toFixed(0) + "%"),
-      stat("Buffer Cache", m.bufferCachePct.toFixed(0) + "%"),
-      stat("PGA en uso", m.pgaInuseMb + " MB"),
-      stat("PGA over-alloc", m.pgaOverAlloc),
-      stat("PGA cache hit", m.pgaCacheHitPct.toFixed(1) + "%")
+      stat(S.stats.sgaTotal, m.sgaTotalMb + " MB"),
+      stat(S.stats.sgaLibre, m.sgaFreeMb + " MB"),
+      stat(S.stats.usoSga, im.sgaUsedPct + "%"),
+      stat(S.stats.sharedPool, m.sharedPoolPct.toFixed(0) + "%"),
+      stat(S.stats.bufferCache, m.bufferCachePct.toFixed(0) + "%"),
+      stat(S.stats.pgaUso, m.pgaInuseMb + " MB"),
+      stat(S.stats.pgaOverAlloc, m.pgaOverAlloc),
+      stat(S.stats.pgaCacheHit, m.pgaCacheHitPct.toFixed(1) + "%")
     ].join("");
 
     function memBar(label, pct) {
@@ -230,36 +350,41 @@
       memBar("PGA", im.pgaUsedPct);
 
     document.getElementById("mon-ia-stats").innerHTML = [
-      stat("Datafiles ONLINE", m.datafilesOnline),
-      stat("Datafiles OFFLINE", m.datafilesOffline),
-      stat("Con problemas", m.datafilesProblem),
-      stat("TS normales", m.tablespacesNormal),
-      stat("TS advertencia", m.tablespacesWarning),
-      stat("TS críticos", m.tablespacesCritical),
-      stat("Máx. uso TS", m.maxTablespaceUsedPct.toFixed(0) + "%"),
-      stat("Uso TEMP", m.tempUsedPct.toFixed(0) + "%"),
-      stat("Redo OK / problema", m.redoGroupsOk + " / " + m.redoGroupsProblem)
+      stat(S.stats.datafilesOnline, m.datafilesOnline),
+      stat(S.stats.datafilesOffline, m.datafilesOffline),
+      stat(S.stats.conProblemas, m.datafilesProblem),
+      stat(S.stats.tsNormales, m.tablespacesNormal),
+      stat(S.stats.tsAdvertencia, m.tablespacesWarning),
+      stat(S.stats.tsCriticos, m.tablespacesCritical),
+      stat(S.stats.maxUsoTs, m.maxTablespaceUsedPct.toFixed(0) + "%"),
+      stat(S.stats.usoTemp, m.tempUsedPct.toFixed(0) + "%"),
+      stat(S.stats.redoOkProblema, m.redoGroupsOk + " / " + m.redoGroupsProblem)
     ].join("");
 
     document.getElementById("mon-ts-summary").innerHTML =
       '<div class="mon-ts-chips">' +
-        '<span class="mon-chip st-saludable">' + m.tablespacesNormal + " normales</span>" +
-        '<span class="mon-chip st-advertencia">' + m.tablespacesWarning + " advertencia</span>" +
-        '<span class="mon-chip st-critico">' + m.tablespacesCritical + " críticos</span>" +
+        '<span class="mon-chip st-saludable">' + m.tablespacesNormal + " " + S.tsChips.normales + "</span>" +
+        '<span class="mon-chip st-advertencia">' + m.tablespacesWarning + " " + S.tsChips.advertencia + "</span>" +
+        '<span class="mon-chip st-critico">' + m.tablespacesCritical + " " + S.tsChips.criticos + "</span>" +
       "</div>";
 
     // Alertas
     document.getElementById("mon-alert-count").textContent = String(alerts.length);
     var list = document.getElementById("mon-alerts-list");
     if (!alerts.length) {
-      list.innerHTML = '<li class="mon-alert-empty">Sin alertas. Todos los componentes en rangos aceptables.</li>';
+      list.innerHTML = '<li class="mon-alert-empty">' + S.alertEmpty + "</li>";
     } else {
       list.innerHTML = alerts.map(function (a) {
         var cls = a.nivel === "critico" ? "al-critico" : a.nivel === "alto" ? "al-alto" : "al-adv";
+        var compLabel = S.alertComponentes[a.componente] || a.componente;
+        var varLabel = S.alertVariables[a.variable] || a.variable;
+        var descFn = S.alertDesc[a.descKey];
+        var desc = descFn ? descFn(a.params || {}) : "";
+        var nivelLabel = S.alertNivelLabels[a.nivel] || String(a.nivel).toUpperCase();
         return '<li class="mon-alert-item ' + cls + '">' +
-          '<div class="mon-alert-title"><strong>' + a.componente + "</strong> · " + a.variable + "</div>" +
-          '<div class="mon-alert-desc">' + a.descripcion + "</div>" +
-          '<div class="mon-alert-meta">Valor: ' + a.valor + " · Umbral: " + a.umbral + " · " + a.nivel.toUpperCase() + "</div>" +
+          '<div class="mon-alert-title"><strong>' + compLabel + "</strong> · " + varLabel + "</div>" +
+          '<div class="mon-alert-desc">' + desc + "</div>" +
+          '<div class="mon-alert-meta">' + S.alertValor + a.valor + S.alertUmbral + a.umbral + " · " + nivelLabel + "</div>" +
           "</li>";
       }).join("");
     }
@@ -277,6 +402,7 @@
   }
 
   function drawHistory(arr) {
+    var S = tr();
     var canvas = document.getElementById("mon-canvas");
     if (!canvas) return;
     var ctx = canvas.getContext("2d");
@@ -288,7 +414,7 @@
     ctx.clearRect(0, 0, w, h);
     if (arr.length < 2) {
       ctx.fillStyle = "#8a8a8a"; ctx.font = "13px Inter,sans-serif";
-      ctx.fillText("Se necesitan al menos 2 mediciones para graficar.", 16, h / 2);
+      ctx.fillText(S.chartMinData, 16, h / 2);
       return;
     }
     var pad = { l: 36, r: 12, t: 16, b: 30 };
@@ -317,17 +443,32 @@
     });
   }
 
+  function updateTimestamp(ts) {
+    var S = tr();
+    var locale = curLang() === "en" ? "en-US" : "es-CR";
+    document.getElementById("mon-last-update").textContent =
+      S.updated + ts.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  }
+
   function collectAndRender() {
     var scenario = document.getElementById("mon-instance").value;
     var metrics = applyScenario(baseMetrics(), scenario);
     var ip = calcIP(metrics), im = calcIM(metrics), ia = calcIA(metrics);
     var isbd = calcISBD(ip, im, ia);
     var alerts = buildAlerts(metrics, ip, im);
+    var ts = new Date();
+    lastResult = { ip: ip, im: im, ia: ia, isbd: isbd, alerts: alerts, ts: ts };
     renderAll(ip, im, ia, isbd, alerts);
     drawHistory(pushHistory(isbd, ip, im, ia));
-    var ts = new Date();
-    document.getElementById("mon-last-update").textContent =
-      "Actualizado: " + ts.toLocaleTimeString("es-CR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    updateTimestamp(ts);
+  }
+
+  // Re-renderiza la última medición ya calculada, sin resimular ni empujar historial nuevo.
+  function rerenderCurrent() {
+    if (!lastResult) return;
+    renderAll(lastResult.ip, lastResult.im, lastResult.ia, lastResult.isbd, lastResult.alerts);
+    drawHistory(loadHistory());
+    updateTimestamp(lastResult.ts);
   }
 
   function startAuto() {
@@ -345,6 +486,7 @@
       localStorage.removeItem(HISTORY_KEY); drawHistory([]);
     });
     window.addEventListener("resize", function () { drawHistory(loadHistory()); });
+    document.addEventListener("tld:langchange", rerenderCurrent);
     collectAndRender();
     startAuto();
   }
