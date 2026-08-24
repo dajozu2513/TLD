@@ -2043,3 +2043,89 @@ p {
 }
 
 .mon-varinfo-formula[hidden] { display: none; }
+/* ===== Monitor: badge, causas y tabla de umbrales ===== */
+.mon-sim-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #2e7d32;
+}
+
+.mon-isbd-causas {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--gray-300);
+  font-size: 0.8rem;
+}
+
+.mon-isbd-causas-label {
+  display: block;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: #b3261e;
+  margin-bottom: 4px;
+}
+
+.mon-isbd-causas-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: var(--gray-600);
+}
+
+.mon-isbd-causas-list li {
+  padding: 1px 0;
+}
+
+.mon-thresholds-panel {
+  margin-bottom: 22px;
+}
+
+.mon-thresholds-note {
+  margin-bottom: 14px;
+}
+
+.mon-thresholds-wrap {
+  overflow-x: auto;
+}
+
+.mon-thresholds-table-el {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.mon-thresholds-table-el th,
+.mon-thresholds-table-el td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--gray-300);
+  white-space: nowrap;
+}
+
+.mon-thresholds-table-el th {
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gray-600);
+}
+
+.mon-thresholds-table-el td:first-child {
+  font-weight: 600;
+  color: var(--black-900);
+  white-space: normal;
+}
+
+.mon-thresholds-table-el td:nth-child(2) { color: #1f8a4c; }
+.mon-thresholds-table-el td:nth-child(3) { color: #b8860b; }
+.mon-thresholds-table-el td:nth-child(4) { color: #c1580f; }
+.mon-thresholds-table-el td:nth-child(5) { color: #b3261e; }

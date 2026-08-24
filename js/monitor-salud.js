@@ -479,8 +479,11 @@
       var isbd = calcISBD(ip, im, ia);
       var alerts = buildAlerts(metrics, ip, im);
       renderAll(ip, im, ia, isbd, alerts);
+      renderThresholdsTable();
       drawHistory(pushHistory(isbd, ip, im, ia));
       showError(null);
+
+      
 
       var ts = new Date();
       document.getElementById("mon-last-update").textContent =
@@ -568,4 +571,41 @@
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
+
+
+    // Tabla estática de métricas y umbrales (solo visual)
+  function renderThresholdsTable() {
+    var el = document.getElementById("mon-thresholds-table");
+    if (!el) return;
+
+    var rows = [
+      ["Utilización procesos", "0–69%", "70–84%", "85–94%", "≥95%"],
+      ["Sesiones bloqueadas", "0", "—", "—", "≥1"],
+      ["Long ops", "0", "1–2", "≥3", "—"],
+      ["Proceso de fondo", "ACTIVO", "—", "—", "cualquier otro estado"],
+      ["Uso SGA", "0–84%", "85–89%", "90–94%", "≥95%"],
+      ["Shared Pool", "0–84%", "85–89%", "90–94%", "≥95%"],
+      ["Buffer Cache Hit", "≥95%", "90–94%", "80–89%", "<80%"],
+      ["PGA en uso", "0–84%", "85–89%", "90–94%", "≥95%"],
+      ["PGA over-alloc", "0", "1–5", "6–20", "≥21"],
+      ["PGA cache hit", "92–100%", "85–91%", "70–84%", "0–69%"],
+      ["Espacio libre (TS / TEMP / redo)", "20–100%", "10–19%", "5–9%", "0–4%"],
+      ["Datafiles OFFLINE", "0", "—", "—", "≥1"],
+      ["Datafiles problema", "0", "—", "—", "≥1"],
+      ["Redo logs con problema", "0", "—", "—", "≥1"]
+    ];
+
+    var html = '<table class="mon-thresholds-table-el"><thead><tr>' +
+      "<th>Variable</th><th>Normal</th><th>Advertencia</th><th>Alto</th><th>Crítico</th>" +
+      "</tr></thead><tbody>";
+
+    rows.forEach(function (r) {
+      html += "<tr><td>" + r[0] + "</td><td>" + r[1] + "</td><td>" + r[2] +
+        "</td><td>" + r[3] + "</td><td>" + r[4] + "</td></tr>";
+    });
+
+    html += "</tbody></table>";
+    el.innerHTML = html;
+  }
+
 })();

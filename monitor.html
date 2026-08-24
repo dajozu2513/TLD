@@ -63,6 +63,7 @@
           <p class="eyebrow">Herramienta de monitoreo</p>
           <h1 class="mon-title">Monitor de Salud Oracle</h1>
           <p class="mon-subtitle">Procesos · Memoria · Archivos → Índice ISBD y alertas en tiempo real</p>
+          <span class="mon-sim-badge">📡 Datos en vivo de Oracle</span>
         </div>
         <div class="mon-hero-actions">
           <button type="button" class="btn btn-primary" id="mon-btn-refresh">Actualizar ahora</button>
@@ -81,6 +82,10 @@
           <span class="mon-isbd-label">Índice de Salud de la Base de Datos (ISBD)</span>
           <div class="mon-isbd-number" id="mon-isbd-value">—</div>
           <span class="mon-badge" id="mon-isbd-status">—</span>
+          <div class="mon-isbd-causas" id="mon-isbd-causas" hidden>
+            <span class="mon-isbd-causas-label" id="mon-isbd-causas-label">Causas:</span>
+             <ul class="mon-isbd-causas-list" id="mon-isbd-causas-list"></ul>
+          </div>
         </div>
         <div class="mon-isbd-right">
           <div class="mon-weight"><span>Procesos</span><strong>30%</strong></div>
@@ -381,6 +386,14 @@ IA = clamp(98 − penalizaciones, 0, 100)
           <p class="mon-note">Últimas 40 mediciones guardadas en este navegador.</p>
         </article>
       </div>
+
+      <article class="mon-panel mon-thresholds-panel">
+      <h3 class="mon-panel-title">Métricas y umbrales</h3>
+          <p class="mon-note mon-thresholds-note">
+           Límite inferior y superior de cada variable, y el nivel que dispara cada color. Para espacio libre en archivos se exige un mínimo del 20%.
+         </p>
+        <div class="mon-thresholds-wrap" id="mon-thresholds-table"></div>
+      </article>
 
       <div class="mon-footnote">
         <strong>Modo actual:</strong> datos en vivo leídos directamente de las vistas dinámicas de Oracle
