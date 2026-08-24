@@ -171,6 +171,9 @@ const TLD_TRANSLATIONS = {
     mon_panel_history: "Evolución del ISBD",
     mon_btn_clear_history: "Limpiar historial",
     mon_history_note: "Últimas 40 mediciones guardadas en este navegador.",
+    mon_sim_badge: "🧪 Datos simulados — sin conexión real a Oracle",
+    mon_panel_thresholds: "Métricas y umbrales",
+    mon_thresholds_note: "Límite inferior y superior de cada variable, y el nivel que dispara cada color. Para espacio libre en archivos se exige un mínimo del 20%.",
     mon_footnote: '<strong>Modo actual:</strong> simulación local con métricas inspiradas en vistas Oracle (<code>V$PROCESS</code>, <code>V$SESSION</code>, <code>V$RESOURCE_LIMIT</code>, <code>V$SGA</code>, <code>V$PGASTAT</code>, <code>V$DATAFILE</code>, <code>V$LOG</code>). Cálculo según propuesta del curso: IP, IM, IA → ISBD.',
 
     meta_description: "Three Little Ducks Database Consulting — administración, optimización, migración y seguridad de bases de datos para empresas."
@@ -343,6 +346,9 @@ const TLD_TRANSLATIONS = {
     mon_panel_history: "ISBD evolution",
     mon_btn_clear_history: "Clear history",
     mon_history_note: "Last 40 readings saved in this browser.",
+    mon_sim_badge: "🧪 Simulated data — no real connection to Oracle",
+    mon_panel_thresholds: "Metrics and thresholds",
+    mon_thresholds_note: "Lower and upper limit for each variable, and the level that triggers each color. Free space in files requires a minimum of 20%.",
     mon_footnote: '<strong>Current mode:</strong> local simulation with metrics inspired by Oracle views (<code>V$PROCESS</code>, <code>V$SESSION</code>, <code>V$RESOURCE_LIMIT</code>, <code>V$SGA</code>, <code>V$PGASTAT</code>, <code>V$DATAFILE</code>, <code>V$LOG</code>). Calculated per the course proposal: IP, IM, IA → ISBD.',
 
     meta_description: "Three Little Ducks Database Consulting — database administration, optimization, migration and security for businesses."

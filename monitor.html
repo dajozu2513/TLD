@@ -63,6 +63,7 @@
           <p class="eyebrow" data-i18n="mon_eyebrow">Herramienta de monitoreo</p>
           <h1 class="mon-title" data-i18n="mon_title">Monitor de Salud Oracle</h1>
           <p class="mon-subtitle" data-i18n="mon_subtitle">Procesos · Memoria · Archivos → Índice ISBD y alertas en tiempo real</p>
+          <span class="mon-sim-badge" data-i18n="mon_sim_badge">🧪 Datos simulados — sin conexión real a Oracle</span>
         </div>
         <div class="mon-hero-actions">
           <select id="mon-instance" class="mon-select">
@@ -86,6 +87,10 @@
           <span class="mon-isbd-label" data-i18n="mon_isbd_label">Índice de Salud de la Base de Datos (ISBD)</span>
           <div class="mon-isbd-number" id="mon-isbd-value">—</div>
           <span class="mon-badge" id="mon-isbd-status">—</span>
+          <div class="mon-isbd-causas" id="mon-isbd-causas" hidden>
+            <span class="mon-isbd-causas-label" id="mon-isbd-causas-label"></span>
+            <ul class="mon-isbd-causas-list" id="mon-isbd-causas-list"></ul>
+          </div>
         </div>
         <div class="mon-isbd-right">
           <div class="mon-weight"><span data-i18n="mon_weight_processes">Procesos</span><strong>30%</strong></div>
@@ -170,6 +175,12 @@
           <p class="mon-note" data-i18n="mon_history_note">Últimas 40 mediciones guardadas en este navegador.</p>
         </article>
       </div>
+
+      <article class="mon-panel mon-thresholds-panel">
+        <h3 class="mon-panel-title" data-i18n="mon_panel_thresholds">Métricas y umbrales</h3>
+        <p class="mon-note mon-thresholds-note" data-i18n="mon_thresholds_note">Límite inferior y superior de cada variable, y el nivel que dispara cada color. Para espacio libre en archivos se exige un mínimo del 20%.</p>
+        <div class="mon-thresholds-wrap" id="mon-thresholds-table"></div>
+      </article>
 
       <div class="mon-footnote" data-i18n-html="mon_footnote">
         <strong>Modo actual:</strong> simulación local con métricas inspiradas en vistas Oracle
