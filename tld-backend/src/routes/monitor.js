@@ -214,6 +214,9 @@ function buildMetrics(d) {
   let maxTablespaceUsedPct = 0;
   let totalAllocBytes = 0;
   let totalFreeBytes = 0;
+  // Detalle por tablespace, para poder mostrar en el frontend cuál o
+  // cuáles tablespaces están en cada estado, no solo el conteo agregado.
+  const tablespacesDetail = [];
   d.tablespaceRes.rows.forEach((ts) => {
     const alloc = num(ts.alloc_bytes);
     const free = num(ts.free_bytes);
@@ -222,11 +225,18 @@ function buildMetrics(d) {
     if (alloc <= 0) return;
     const usedPct = ((alloc - free) / alloc) * 100;
     if (usedPct > maxTablespaceUsedPct) maxTablespaceUsedPct = usedPct;
-    if (usedPct >= 95) tablespacesCritical++;
-    else if (usedPct >= 80) tablespacesWarning++;
+    const estado = usedPct >= 95 ? "critico" : usedPct >= 80 ? "advertencia" : "normal";
+    if (estado === "critico") tablespacesCritical++;
+    else if (estado === "advertencia") tablespacesWarning++;
     else tablespacesNormal++;
+    tablespacesDetail.push({
+      nombre: ts.tablespace_name,
+      usedPct: Math.round(usedPct * 10) / 10,
+      estado,
+    });
   });
   maxTablespaceUsedPct = Math.round(maxTablespaceUsedPct * 10) / 10;
+  tablespacesDetail.sort((a, b) => b.usedPct - a.usedPct);
  
   // Tamaño total de datafiles (DBA_DATA_FILES.bytes sumado): espacio en
   // disco reservado para datos, sin importar cuánto está ocupado.
@@ -282,6 +292,7 @@ function buildMetrics(d) {
     tablespacesNormal,
     tablespacesWarning,
     tablespacesCritical,
+    tablespacesDetail,
     tempUsedPct,
     redoGroupsOk,
     redoGroupsProblem,

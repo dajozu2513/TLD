@@ -82,16 +82,24 @@
           <span class="mon-isbd-label">Índice de Salud de la Base de Datos (ISBD)</span>
           <div class="mon-isbd-number" id="mon-isbd-value">—</div>
           <span class="mon-badge" id="mon-isbd-status">—</span>
-          <div class="mon-isbd-causas" id="mon-isbd-causas" hidden>
-            <span class="mon-isbd-causas-label" id="mon-isbd-causas-label">Causas:</span>
-             <ul class="mon-isbd-causas-list" id="mon-isbd-causas-list"></ul>
+
+          <div class="mon-isbd-real" id="mon-isbd-real">
+            <span class="mon-isbd-real-label">Estado real:</span>
+            <span class="mon-badge" id="mon-isbd-real-status">—</span>
+            <button type="button" class="mon-isbd-causas-toggle" id="mon-isbd-causas-toggle" aria-expanded="false" aria-controls="mon-isbd-causas">Ver causas</button>
+            <div class="mon-isbd-causas" id="mon-isbd-causas" hidden>
+              <span class="mon-isbd-causas-label" id="mon-isbd-causas-label">Causas:</span>
+              <ul class="mon-isbd-causas-list" id="mon-isbd-causas-list"></ul>
+              <button type="button" class="mon-isbd-ver-alertas" id="mon-isbd-ver-alertas">Ver alertas →</button>
+            </div>
           </div>
         </div>
-        <div class="mon-isbd-right">
+        <div class="mon-isbd-right mon-isbd-right--clickable" id="mon-isbd-right" data-var="semaforoEstados" tabindex="0" role="button" aria-haspopup="dialog" title="Ver umbrales del semáforo">
           <div class="mon-weight"><span>Procesos</span><strong>30%</strong></div>
           <div class="mon-weight"><span>Memoria</span><strong>35%</strong></div>
           <div class="mon-weight"><span>Archivos</span><strong>35%</strong></div>
           <p class="mon-formula">ISBD = 0.30×IP + 0.35×IM + 0.35×IA</p>
+          <span class="mon-isbd-right-hint">Ver umbrales del semáforo <span class="mon-info-icon" aria-hidden="true">ⓘ</span></span>
         </div>
       </div>
 
@@ -367,7 +375,7 @@ IA = clamp(98 − penalizaciones, 0, 100)
 
       <!-- Alertas + Historial -->
       <div class="mon-bottom">
-        <article class="mon-panel mon-alerts-panel">
+        <article class="mon-panel mon-alerts-panel" id="mon-alerts-panel">
           <div class="mon-panel-head">
             <h3 class="mon-panel-title">Alertas activas</h3>
             <span class="mon-count" id="mon-alert-count">0</span>
@@ -423,11 +431,13 @@ IA = clamp(98 − penalizaciones, 0, 100)
 <button class="scroll-top" id="scrollTop" aria-label="Volver arriba">↑</button>
 
 <div class="mon-varinfo-backdrop" id="mon-varinfo-backdrop" hidden>
-  <div class="mon-varinfo-modal" role="dialog" aria-modal="true" aria-labelledby="mon-varinfo-title">
+  <div class="mon-varinfo-modal" id="mon-varinfo-modal" role="dialog" aria-modal="true" aria-labelledby="mon-varinfo-title">
+    <button type="button" class="mon-varinfo-back" id="mon-varinfo-back" aria-label="Volver" hidden>&larr;</button>
     <button type="button" class="mon-varinfo-close" id="mon-varinfo-close" aria-label="Cerrar">&times;</button>
     <h4 class="mon-varinfo-title" id="mon-varinfo-title">—</h4>
     <p class="mon-varinfo-desc" id="mon-varinfo-desc"></p>
     <pre class="mon-varinfo-formula" id="mon-varinfo-formula" hidden></pre>
+    <div class="mon-varinfo-table" id="mon-varinfo-table" hidden></div>
   </div>
 </div>
 

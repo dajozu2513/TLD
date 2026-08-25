@@ -12,6 +12,12 @@
   var MAX_HISTORY = 40;
   var REFRESH_MS = 15000;
   var autoTimer = null;
+  // Últimas alertas renderizadas, indexadas igual que la lista en pantalla,
+  // para poder abrir el modal de detalle al hacer clic sobre una de ellas.
+  var currentAlerts = [];
+  // Último detalle por tablespace [{nombre, usedPct, estado}], para el
+  // modal que abre cada bolita de color de "Tablespaces".
+  var currentTsDetail = [];
 
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
@@ -78,34 +84,151 @@
     return { key: "critico", label: "Crítico", cls: "st-critico" };
   }
 
-  function buildAlerts(m, ip, im) {
+  function formatFechaHora(d) {
+    if (!d) return "—";
+    return d.toLocaleString("es-CR", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit", second: "2-digit"
+    });
+  }
+
+  function buildAlerts(m, ip, im, fecha) {
     var alerts = [];
-    if (m.sessionsBlocked > 0) alerts.push({ nivel: "critico", componente: "Procesos", variable: "Sesiones bloqueadas", valor: m.sessionsBlocked, umbral: 0, descripcion: "Existen " + m.sessionsBlocked + " sesión(es) bloqueada(s). Revisar V$WAIT_CHAINS." });
-    if (ip.utilProc >= 95) alerts.push({ nivel: "critico", componente: "Procesos", variable: "Utilización procesos", valor: ip.utilProc + "%", umbral: "95%", descripcion: "Procesos cerca del límite (PROCESSES)." });
-    else if (ip.utilProc >= 85) alerts.push({ nivel: "alto", componente: "Procesos", variable: "Utilización procesos", valor: ip.utilProc + "%", umbral: "85%", descripcion: "Utilización alta de procesos." });
-    else if (ip.utilProc >= 70) alerts.push({ nivel: "advertencia", componente: "Procesos", variable: "Utilización procesos", valor: ip.utilProc + "%", umbral: "70%", descripcion: "Utilización en zona de advertencia." });
-    if (m.longOps > 0) alerts.push({ nivel: m.longOps >= 3 ? "alto" : "advertencia", componente: "Procesos", variable: "Long ops", valor: m.longOps, umbral: 0, descripcion: m.longOps + " operación(es) prolongada(s) (V$SESSION_LONGOPS)." });
-    if (m.pgaOverAlloc > 5) alerts.push({ nivel: m.pgaOverAlloc > 20 ? "critico" : "alto", componente: "Memoria", variable: "PGA over-alloc", valor: m.pgaOverAlloc, umbral: 0, descripcion: "PGA con sobre-asignación." });
-    else if (m.pgaOverAlloc > 0) alerts.push({ nivel: "advertencia", componente: "Memoria", variable: "PGA over-alloc", valor: m.pgaOverAlloc, umbral: 0, descripcion: "Se detectaron over-allocations de PGA." });
-    if (m.pgaCacheHitPct < 70) alerts.push({ nivel: "critico", componente: "Memoria", variable: "PGA cache hit", valor: m.pgaCacheHitPct.toFixed(1) + "%", umbral: "70%", descripcion: "Cache hit de PGA muy bajo." });
-    else if (m.pgaCacheHitPct < 85) alerts.push({ nivel: "advertencia", componente: "Memoria", variable: "PGA cache hit", valor: m.pgaCacheHitPct.toFixed(1) + "%", umbral: "85%", descripcion: "Cache hit de PGA por debajo del deseable." });
-    if (im.sgaUsedPct > 95) alerts.push({ nivel: "alto", componente: "Memoria", variable: "Uso SGA", valor: im.sgaUsedPct + "%", umbral: "95%", descripcion: "SGA con muy poco espacio libre." });
-    if (m.datafilesInaccessible > 0) alerts.push({ nivel: "critico", componente: "Archivos", variable: "Archivos inaccesibles", valor: m.datafilesInaccessible, umbral: 0, descripcion: m.datafilesInaccessible + " datafile(s) con error de encabezado (V$DATAFILE_HEADER.ERROR)." });
-    if (m.datafilesOffline > 0) alerts.push({ nivel: "critico", componente: "Archivos", variable: "Datafiles OFFLINE", valor: m.datafilesOffline, umbral: 0, descripcion: m.datafilesOffline + " datafile(s) OFFLINE." });
-    if (m.datafilesProblem > 0) alerts.push({ nivel: "critico", componente: "Archivos", variable: "Archivos inválidos", valor: m.datafilesProblem, umbral: 0, descripcion: "Datafiles en estado RECOVER (necesitan recuperación de medios)." });
-    if (m.tablespacesCritical > 0) alerts.push({ nivel: "critico", componente: "Archivos", variable: "TS críticos", valor: m.tablespacesCritical, umbral: 0, descripcion: m.tablespacesCritical + " tablespace(s) críticos." });
-    else if (m.tablespacesWarning > 0) alerts.push({ nivel: "advertencia", componente: "Archivos", variable: "TS advertencia", valor: m.tablespacesWarning, umbral: 0, descripcion: m.tablespacesWarning + " tablespace(s) próximos al límite." });
-    if (m.maxTablespaceUsedPct >= 95) alerts.push({ nivel: "critico", componente: "Archivos", variable: "Máx. uso TS", valor: m.maxTablespaceUsedPct.toFixed(0) + "%", umbral: "95%", descripcion: "Tablespace supera 95% de uso." });
-    if (m.tempUsedPct >= 90) alerts.push({ nivel: m.tempUsedPct >= 95 ? "critico" : "alto", componente: "Archivos", variable: "Uso TEMP", valor: m.tempUsedPct.toFixed(0) + "%", umbral: "90%", descripcion: "Tablespace temporal elevado." });
-    if (m.redoGroupsProblem > 0) alerts.push({ nivel: "critico", componente: "Archivos", variable: "Redo logs", valor: m.redoGroupsProblem, umbral: 0, descripcion: "Problemas en grupos de redo log." });
+    if (m.sessionsBlocked > 0) alerts.push({ nivel: "critico", componente: "Procesos", variable: "Sesiones bloqueadas", valor: m.sessionsBlocked, umbral: 0, descripcion: "Existen " + m.sessionsBlocked + " sesión(es) bloqueada(s). Revisar V$WAIT_CHAINS.",
+      origen: "V$SESSION, columna blocking_session distinta de nulo: sesiones que están esperando liberar un lock que sostiene otra sesión.",
+      escalones: "0 → normal. ≥1 → crítico. Cada sesión bloqueada resta 6 puntos al Indicador de Procesos, con un tope de 25.",
+      justificacion: "Se penaliza aparte de la utilización general porque es un problema cualitativamente distinto: la base puede tener solo un 20% de procesos en uso y aun así sufrir una transacción crítica paralizada por un solo lock. Si el indicador solo mirara utilización, ese escenario se vería saludable cuando en realidad hay un problema activo. Por eso el umbral es 0: basta una sola sesión bloqueada para considerarlo un problema, sin zona neutral." });
+    if (ip.utilProc >= 95) alerts.push({ nivel: "critico", componente: "Procesos", variable: "Utilización procesos", valor: ip.utilProc + "%", umbral: "95%", descripcion: "Procesos cerca del límite (PROCESSES).",
+      origen: "máx(procesos actuales ÷ PROCESSES, sesiones actuales ÷ límite de sesiones) × 100, con datos de V$RESOURCE_LIMIT y V$SESSION.",
+      escalones: "0–69% normal. 70–84% advertencia. 85–94% alto. ≥95% crítico.",
+      justificacion: "Se usaron umbrales tipo semáforo, 70/85/95%, un patrón estándar en monitoreo de sistemas, dejando la zona crítica justo antes del 100%, el punto donde Oracle empieza a rechazar conexiones nuevas con ORA-00020, para darle margen de reacción al DBA." });
+    else if (ip.utilProc >= 85) alerts.push({ nivel: "alto", componente: "Procesos", variable: "Utilización procesos", valor: ip.utilProc + "%", umbral: "85%", descripcion: "Utilización alta de procesos.",
+      origen: "máx(procesos actuales ÷ PROCESSES, sesiones actuales ÷ límite de sesiones) × 100, con datos de V$RESOURCE_LIMIT y V$SESSION.",
+      escalones: "0–69% normal. 70–84% advertencia. 85–94% alto. ≥95% crítico.",
+      justificacion: "Se usaron umbrales tipo semáforo, 70/85/95%, un patrón estándar en monitoreo de sistemas, dejando la zona crítica justo antes del 100%, el punto donde Oracle empieza a rechazar conexiones nuevas con ORA-00020, para darle margen de reacción al DBA." });
+    else if (ip.utilProc >= 70) alerts.push({ nivel: "advertencia", componente: "Procesos", variable: "Utilización procesos", valor: ip.utilProc + "%", umbral: "70%", descripcion: "Utilización en zona de advertencia.",
+      origen: "máx(procesos actuales ÷ PROCESSES, sesiones actuales ÷ límite de sesiones) × 100, con datos de V$RESOURCE_LIMIT y V$SESSION.",
+      escalones: "0–69% normal. 70–84% advertencia. 85–94% alto. ≥95% crítico.",
+      justificacion: "Se usaron umbrales tipo semáforo, 70/85/95%, un patrón estándar en monitoreo de sistemas, dejando la zona crítica justo antes del 100%, el punto donde Oracle empieza a rechazar conexiones nuevas con ORA-00020, para darle margen de reacción al DBA." });
+    if (m.longOps > 0) alerts.push({ nivel: m.longOps >= 3 ? "alto" : "advertencia", componente: "Procesos", variable: "Long ops", valor: m.longOps, umbral: 0, descripcion: m.longOps + " operación(es) prolongada(s) (V$SESSION_LONGOPS).",
+      origen: "V$SESSION_LONGOPS: operaciones con trabajo pendiente y tiempo restante mayor a 0.",
+      escalones: "0 → normal. 1–2 → advertencia. ≥3 → alto.",
+      justificacion: "Pesa la mitad que una sesión bloqueada, penalización máxima −12 contra −25, porque un long op no siempre es un problema: puede ser mantenimiento normal, como crear un índice. Aun así se dispara desde el primer caso para que el DBA lo tenga presente." });
+    if (m.pgaOverAlloc > 5) alerts.push({ nivel: m.pgaOverAlloc > 20 ? "critico" : "alto", componente: "Memoria", variable: "PGA over-alloc", valor: m.pgaOverAlloc, umbral: 0, descripcion: "PGA con sobre-asignación.",
+      origen: "V$PGASTAT, estadística “over allocation count”: veces que el PGA tuvo que exceder PGA_AGGREGATE_TARGET.",
+      escalones: "0 → normal. 1–5 → advertencia. 6–20 → alto. ≥21 → crítico.",
+      justificacion: "A diferencia de las demás variables de memoria, no es una proyección de riesgo sino la confirmación de que Oracle ya excedió PGA_AGGREGATE_TARGET al menos una vez. Por eso penaliza desde el primer evento, sin zona neutral, con la penalización más alta de todo el Indicador de Memoria." });
+    else if (m.pgaOverAlloc > 0) alerts.push({ nivel: "advertencia", componente: "Memoria", variable: "PGA over-alloc", valor: m.pgaOverAlloc, umbral: 0, descripcion: "Se detectaron over-allocations de PGA.",
+      origen: "V$PGASTAT, estadística “over allocation count”: veces que el PGA tuvo que exceder PGA_AGGREGATE_TARGET.",
+      escalones: "0 → normal. 1–5 → advertencia. 6–20 → alto. ≥21 → crítico.",
+      justificacion: "A diferencia de las demás variables de memoria, no es una proyección de riesgo sino la confirmación de que Oracle ya excedió PGA_AGGREGATE_TARGET al menos una vez. Por eso penaliza desde el primer evento, sin zona neutral, con la penalización más alta de todo el Indicador de Memoria." });
+    if (m.pgaCacheHitPct < 70) alerts.push({ nivel: "critico", componente: "Memoria", variable: "PGA cache hit", valor: m.pgaCacheHitPct.toFixed(1) + "%", umbral: "70%", descripcion: "Cache hit de PGA muy bajo.",
+      origen: "V$PGASTAT, estadística “cache hit percentage”.",
+      escalones: "92–100% normal. 85–91% advertencia. 70–84% alto. 0–69% crítico. Un valor alto es bueno, al contrario que las demás variables.",
+      justificacion: "Los cortes son más bajos que los de Buffer Cache Hit, 92/85/70% en vez de 95/90/80%, porque el rendimiento natural de la PGA en estas operaciones, ordenamientos y hash joins, es menor. Un valor alto es bueno, así que el criterio se invierte respecto a las demás variables de memoria." });
+    else if (m.pgaCacheHitPct < 85) alerts.push({ nivel: "advertencia", componente: "Memoria", variable: "PGA cache hit", valor: m.pgaCacheHitPct.toFixed(1) + "%", umbral: "85%", descripcion: "Cache hit de PGA por debajo del deseable.",
+      origen: "V$PGASTAT, estadística “cache hit percentage”.",
+      escalones: "92–100% normal. 85–91% advertencia. 70–84% alto. 0–69% crítico. Un valor alto es bueno, al contrario que las demás variables.",
+      justificacion: "Los cortes son más bajos que los de Buffer Cache Hit, 92/85/70% en vez de 95/90/80%, porque el rendimiento natural de la PGA en estas operaciones, ordenamientos y hash joins, es menor. Un valor alto es bueno, así que el criterio se invierte respecto a las demás variables de memoria." });
+    if (im.sgaUsedPct > 95) alerts.push({ nivel: "alto", componente: "Memoria", variable: "Uso SGA", valor: im.sgaUsedPct + "%", umbral: "95%", descripcion: "SGA con muy poco espacio libre.",
+      origen: "Uso SGA % = (tamaño de SGA − memoria libre de SGA) ÷ tamaño de SGA × 100, con datos de V$SGA y V$SGAINFO.",
+      escalones: "0–84% normal. 85–89% advertencia. 90–94% alto. ≥95% crítico.",
+      justificacion: "La SGA es memoria compartida: si se agota, afecta a toda la instancia por igual, no solo a una sesión. Por eso su penalización máxima es de las más altas del Indicador de Memoria, con el corte en 95% para dejar margen antes de quedarse sin memoria compartida." });
+    if (m.datafilesInaccessible > 0) alerts.push({ nivel: "critico", componente: "Archivos", variable: "Archivos inaccesibles", valor: m.datafilesInaccessible, umbral: 0, descripcion: m.datafilesInaccessible + " datafile(s) con error de encabezado (V$DATAFILE_HEADER.ERROR).",
+      origen: "V$DATAFILE_HEADER, columna ERROR: el encabezado del datafile no se pudo leer por archivo no encontrado, dañado o sin permisos.",
+      escalones: "0 → normal. ≥1 → crítico. Cada archivo inaccesible resta 30 puntos al Indicador de Archivos.",
+      justificacion: "Es la señal más grave del Indicador de Archivos: el archivo ni siquiera responde. No existe un estado intermedio de parcialmente inaccesible, así que penaliza por conteo desde el primer caso, con el peso más alto de toda la fórmula." });
+    if (m.datafilesOffline > 0) alerts.push({ nivel: "critico", componente: "Archivos", variable: "Datafiles OFFLINE", valor: m.datafilesOffline, umbral: 0, descripcion: m.datafilesOffline + " datafile(s) OFFLINE.",
+      origen: "V$DATAFILE, columna status = OFFLINE.",
+      escalones: "0 → normal. ≥1 → crítico. Cada datafile offline resta 25 puntos al Indicador de Archivos.",
+      justificacion: "Un datafile offline no está disponible para la instancia hasta ponerlo online explícitamente. Es una falla discreta, no un porcentaje, así que se penaliza por conteo desde el primer caso, igual que las demás fallas de archivo." });
+    if (m.datafilesProblem > 0) alerts.push({ nivel: "critico", componente: "Archivos", variable: "Archivos inválidos", valor: m.datafilesProblem, umbral: 0, descripcion: "Datafiles en estado RECOVER (necesitan recuperación de medios).",
+      origen: "V$DATAFILE, columna status = RECOVER.",
+      escalones: "0 → normal. ≥1 → crítico. Cada archivo inválido resta 18 puntos al Indicador de Archivos.",
+      justificacion: "Un datafile en estado RECOVER necesita recuperación de medios antes de poder usarse con normalidad. Como con los demás estados discretos de datafiles, se penaliza por conteo desde el primer caso, sin curva continua." });
+    if (m.tablespacesCritical > 0) alerts.push({ nivel: "critico", componente: "Archivos", variable: "TS críticos", valor: m.tablespacesCritical, umbral: 0, descripcion: m.tablespacesCritical + " tablespace(s) críticos.",
+      origen: "% uso por tablespace = (espacio asignado − espacio libre) ÷ espacio asignado × 100, con datos de DBA_DATA_FILES y DBA_FREE_SPACE.",
+      escalones: "< 80% normal. 80–94% advertencia. ≥95% crítico, evaluado por cada tablespace.",
+      justificacion: "Los tablespaces se evalúan con umbrales escalonados en vez de una curva continua porque el riesgo de quedarse sin espacio crece de forma no lineal a medida que se acerca al límite físico: 80% ya amerita vigilancia y 95% es una emergencia inminente." });
+    else if (m.tablespacesWarning > 0) alerts.push({ nivel: "advertencia", componente: "Archivos", variable: "TS advertencia", valor: m.tablespacesWarning, umbral: 0, descripcion: m.tablespacesWarning + " tablespace(s) próximos al límite.",
+      origen: "% uso por tablespace = (espacio asignado − espacio libre) ÷ espacio asignado × 100, con datos de DBA_DATA_FILES y DBA_FREE_SPACE.",
+      escalones: "< 80% normal. 80–94% advertencia. ≥95% crítico, evaluado por cada tablespace.",
+      justificacion: "Los tablespaces se evalúan con umbrales escalonados en vez de una curva continua porque el riesgo de quedarse sin espacio crece de forma no lineal a medida que se acerca al límite físico: 80% ya amerita vigilancia y 95% es una emergencia inminente." });
+    if (m.maxTablespaceUsedPct >= 95) alerts.push({ nivel: "critico", componente: "Archivos", variable: "Máx. uso TS", valor: m.maxTablespaceUsedPct.toFixed(0) + "%", umbral: "95%", descripcion: "Tablespace supera 95% de uso.",
+      origen: "Mayor % de uso entre todos los tablespaces, calculado con DBA_DATA_FILES y DBA_FREE_SPACE.",
+      escalones: "0–74% normal. 75–84% advertencia. 85–94% alto. ≥95% crítico.",
+      justificacion: "Se usa el peor tablespace, no un promedio, porque basta con que uno solo se llene para que las operaciones que dependen de él fallen. Los cortes 75/85/95% siguen el mismo criterio de vigilancia creciente que el resto de variables de espacio." });
+    if (m.tempUsedPct >= 90) alerts.push({ nivel: m.tempUsedPct >= 95 ? "critico" : "alto", componente: "Archivos", variable: "Uso TEMP", valor: m.tempUsedPct.toFixed(0) + "%", umbral: "90%", descripcion: "Tablespace temporal elevado.",
+      origen: "DBA_TEMP_FREE_SPACE: (espacio asignado − espacio libre) ÷ tamaño del tablespace temporal × 100.",
+      escalones: "0–84% normal. 85–94% alto. ≥95% crítico.",
+      justificacion: "El tablespace temporal se usa para ordenamientos y hash joins que no caben en memoria; si se agota, esas operaciones fallan directamente. Se usan solo dos cortes, 85% y 95%, porque a diferencia de los tablespaces de datos no hace falta una franja intermedia de advertencia tan fina." });
+    if (m.redoGroupsProblem > 0) alerts.push({ nivel: "critico", componente: "Archivos", variable: "Redo logs", valor: m.redoGroupsProblem, umbral: 0, descripcion: "Problemas en grupos de redo log.",
+      origen: "V$LOG: grupos de redo log fuera de los estados normales CURRENT, ACTIVE, INACTIVE o UNUSED.",
+      escalones: "0 → normal. ≥1 → crítico. Cada grupo con problema resta 15 puntos al Indicador de Archivos.",
+      justificacion: "Un grupo de redo log en estado anómalo compromete la durabilidad de los COMMIT. Es una falla discreta, no gradual, así que se penaliza por conteo desde el primer caso, con un peso alto por el riesgo de pérdida de datos que implica." });
     var order = { critico: 0, alto: 1, advertencia: 2 };
     alerts.sort(function (a, b) { return (order[a.nivel] || 9) - (order[b.nivel] || 9); });
+    // Todas las alertas de una misma pasada comparten el instante en que
+    // se leyeron las métricas que las generaron.
+    alerts.forEach(function (a) { a.fecha = fecha; });
     return alerts;
   }
 
   function setBadge(el, st) {
     el.textContent = st.label;
     el.className = "mon-badge " + st.cls;
+  }
+
+  // Quita cualquier texto entre paréntesis (usado para limpiar las
+  // causas, incluyendo las que vienen de a.descripcion en buildAlerts,
+  // que sí puede traer aclaraciones entre paréntesis).
+  function stripParens(text) {
+    return text.replace(/\s*\([^()]*\)/g, "").replace(/\s{2,}/g, " ").trim();
+  }
+
+  // Explica, en texto, por qué el semáforo llegó al estado que muestra:
+  // primero la alerta crítica que fuerza el estado (si aplica), luego las
+  // alertas activas más severas y, si no hay ninguna, el indicador
+  // (IP/IM/IA) que más está arrastrando el índice general hacia abajo.
+  function buildCausas(isbd, ip, im, ia, alerts, hasCrit, stOriginal, stFinal) {
+    var causas = [];
+
+    if (stFinal.key === "critico" && hasCrit && isbd >= 60) {
+      causas.push(
+        "Hay al menos una alerta crítica activa, lo que fuerza el estado a Crítico aunque el índice general " +
+        isbd.toFixed(2) + " caería en el rango \"" + stOriginal.label + "\" solo por puntaje."
+      );
+    }
+
+    if (alerts.length) {
+      var MAX_CAUSAS = 5;
+      var relevantes = alerts.filter(function (a) { return a.nivel === "critico" || a.nivel === "alto"; });
+      if (!relevantes.length) relevantes = alerts;
+      relevantes.slice(0, MAX_CAUSAS).forEach(function (a) {
+        causas.push(a.componente + " · " + a.variable + ": " + a.descripcion +
+          " Valor: " + a.valor + ", umbral: " + a.umbral + ".");
+      });
+      var extra = relevantes.length - MAX_CAUSAS;
+      if (extra > 0) {
+        causas.push((extra === 1 ? "1 alerta adicional." : extra + " alertas adicionales.") + " Ver «Alertas activas» abajo.");
+      }
+    } else if (stFinal.key !== "optimo") {
+      var indicadores = [
+        { nombre: "Procesos (IP)", score: ip.score },
+        { nombre: "Memoria (IM)", score: im.score },
+        { nombre: "Archivos (IA)", score: ia.score }
+      ];
+      indicadores.sort(function (a, b) { return a.score - b.score; });
+      var peor = indicadores[0];
+      causas.push(
+        "No hay alertas activas por encima del umbral, pero el indicador " + peor.nombre +
+        ", con score " + peor.score.toFixed(1) + " de 100, es el que más reduce el índice general."
+      );
+    } else {
+      causas.push("Todos los indicadores — Procesos, Memoria y Archivos — están en rango óptimo y no hay alertas activas.");
+    }
+
+    return causas.map(stripParens);
   }
 
   function setBar(id, score, cls) {
@@ -120,6 +243,13 @@
       ? ' class="mon-stat mon-stat--clickable" data-var="' + varKey + '" tabindex="0" role="button" aria-haspopup="dialog"'
       : ' class="mon-stat"';
     return "<div" + attrs + '><span class="mon-stat-label">' + label + '</span><span class="mon-stat-value">' + value + "</span></div>";
+  }
+
+  // Cada bolita de color de "Tablespaces" es seleccionable: abre un
+  // modal con el nombre de cada tablespace que está en ese estado.
+  function tsChip(estado, cls, count, etiqueta) {
+    return '<span class="mon-chip ' + cls + ' mon-chip--clickable" data-ts-estado="' + estado +
+      '" tabindex="0" role="button" aria-haspopup="dialog">' + count + " " + etiqueta + "</span>";
   }
 
   // Descripción de cada variable de "Procesos y sesiones", mostrada en
@@ -227,6 +357,20 @@
       titulo: "Archivos inaccesibles",
       desc: "Datafiles cuyo encabezado Oracle no pudo leer correctamente: archivo no encontrado, dañado o sin permisos de acceso (V$DATAFILE_HEADER, columna ERROR). Es la señal más grave de las dos: el archivo ni siquiera responde."
     },
+    semaforoEstados: {
+      titulo: "Umbrales del semáforo",
+      desc: "El ISBD y cada indicador (IP, IM, IA) son un puntaje de 0 a 100 que se traduce a un estado visual (semáforo) según en qué rango caiga. Es el mismo criterio para los cuatro.",
+      tablaHtml: '<div class="mon-table-wrap"><table class="mon-ip-table mon-status-table">' +
+        '<thead><tr><th>Rango de score</th><th>Estado</th></tr></thead>' +
+        '<tbody>' +
+        '<tr><td>90 – 100</td><td><span class="mon-badge st-optimo">Óptimo</span></td></tr>' +
+        '<tr><td>75 – 89</td><td><span class="mon-badge st-saludable">Saludable</span></td></tr>' +
+        '<tr><td>60 – 74</td><td><span class="mon-badge st-advertencia">Advertencia</span></td></tr>' +
+        '<tr><td>40 – 59</td><td><span class="mon-badge st-degradado">Degradado</span></td></tr>' +
+        '<tr><td>0 – 39</td><td><span class="mon-badge st-critico">Crítico</span></td></tr>' +
+        '</tbody></table></div>' +
+        '<p class="mon-varinfo-table-note">Excepción: si hay al menos una alerta crítica activa y el ISBD es ≥ 60, el "Estado real" se fuerza a Crítico aunque el puntaje solo diera Advertencia o Saludable.</p>'
+    },
     tablespacesInfo: {
       titulo: "Tablespaces",
       desc: "Un tablespace es el contenedor lógico donde Oracle guarda los datos (tablas, índices, etc.), respaldado por uno o más datafiles físicos. Los chips de abajo (normal/advertencia/crítico) resumen, para cada tablespace por separado, la comparación entre su espacio asignado y su espacio libre.",
@@ -259,8 +403,16 @@
     }
   };
 
-  function openVarInfo(key) {
-    var info = VAR_INFO[key];
+  // Alerta detrás del modal actualmente abierto, usada por el botón
+  // "Ver justificación de umbral" y por la flecha de volver.
+  var currentModalAlert = null;
+
+  // Renderiza el modal genérico de "info de variable" a partir de un
+  // objeto {titulo, desc, formula?, tablaHtml?}, sin importar si viene
+  // del catálogo VAR_INFO (por clave) o se construyó al vuelo (alertas).
+  // showBack controla si se muestra la flecha de volver (solo en la
+  // vista de justificación de umbral).
+  function renderInfoModal(info, showBack) {
     if (!info) return;
     document.getElementById("mon-varinfo-title").textContent = info.titulo;
     document.getElementById("mon-varinfo-desc").textContent = info.desc;
@@ -274,25 +426,157 @@
       formulaEl.textContent = "";
     }
 
+    var tablaEl = document.getElementById("mon-varinfo-table");
+    if (tablaEl) {
+      if (info.tablaHtml) {
+        tablaEl.innerHTML = info.tablaHtml;
+        tablaEl.hidden = false;
+      } else {
+        tablaEl.hidden = true;
+        tablaEl.innerHTML = "";
+      }
+    }
+
+    var backBtn = document.getElementById("mon-varinfo-back");
+    if (backBtn) backBtn.hidden = !showBack;
+
     var backdrop = document.getElementById("mon-varinfo-backdrop");
     backdrop.hidden = false;
-    document.getElementById("mon-varinfo-close").focus();
+    document.getElementById(showBack ? "mon-varinfo-back" : "mon-varinfo-close").focus();
+  }
+
+  function openVarInfo(key) {
+    currentModalAlert = null;
+    renderInfoModal(VAR_INFO[key], false);
+  }
+
+  function nivelBadgeCls(nivel) {
+    return nivel === "critico" ? "st-critico" : nivel === "alto" ? "st-degradado" : "st-advertencia";
+  }
+
+  function nivelLabel(nivel) {
+    return nivel === "critico" ? "Crítico" : nivel === "alto" ? "Alto" : "Advertencia";
+  }
+
+  // Arma el contenido del modal para una alerta específica: la
+  // descripción del problema, el valor observado y el umbral que la
+  // disparó, cómo se obtuvo ese valor (vista/fórmula de Oracle), la
+  // escala completa de umbrales de esa variable, y el botón que lleva a
+  // la justificación de por qué se escogió ese umbral.
+  function buildAlertModalInfo(a) {
+    var tablaHtml =
+      '<div class="mon-table-wrap"><table class="mon-ip-table">' +
+      '<tbody>' +
+      '<tr><td>Valor observado</td><td>' + a.valor + '</td></tr>' +
+      '<tr><td>Umbral que disparó la alerta</td><td>' + a.umbral + '</td></tr>' +
+      '<tr><td>Nivel</td><td><span class="mon-badge ' + nivelBadgeCls(a.nivel) + '">' + nivelLabel(a.nivel) + '</span></td></tr>' +
+      '<tr><td>Detectada</td><td>' + formatFechaHora(a.fecha) + '</td></tr>' +
+      '</tbody></table></div>' +
+      (a.origen ? '<p class="mon-varinfo-table-note"><strong>Cómo se obtiene el valor:</strong> ' + a.origen + '</p>' : '') +
+      (a.escalones ? '<p class="mon-varinfo-table-note"><strong>Umbrales:</strong> ' + a.escalones + '</p>' : '') +
+      (a.justificacion ? '<button type="button" class="mon-varinfo-just-btn" data-justificacion-trigger>Ver justificación de umbral →</button>' : '');
+
+    return {
+      titulo: a.componente + " · " + a.variable,
+      desc: a.descripcion,
+      tablaHtml: tablaHtml
+    };
+  }
+
+  function openAlertInfo(index) {
+    var a = currentAlerts[Number(index)];
+    if (!a) return;
+    currentModalAlert = a;
+    renderInfoModal(buildAlertModalInfo(a), false);
+  }
+
+  // "Ver justificación de umbral": sustituye el contenido del modal por
+  // la justificación, y deja la flecha de volver lista para restaurar el
+  // detalle de la alerta que estaba abierto.
+  function showJustification() {
+    if (!currentModalAlert) return;
+    renderInfoModal({
+      titulo: "Justificación del umbral — " + currentModalAlert.variable,
+      desc: currentModalAlert.justificacion || "No hay justificación registrada para esta variable."
+    }, true);
   }
 
   function closeVarInfo() {
     var backdrop = document.getElementById("mon-varinfo-backdrop");
     if (!backdrop.hidden) backdrop.hidden = true;
+    currentModalAlert = null;
+  }
+
+  var TS_ESTADO_LABEL = { normal: "Normal", advertencia: "Advertencia", critico: "Crítico" };
+  var TS_ESTADO_CLS = { normal: "st-saludable", advertencia: "st-advertencia", critico: "st-critico" };
+
+  // Arma el modal de una bolita de "Tablespaces": lista, con nombre y %
+  // de uso, cuáles tablespaces están en ese estado específico.
+  function buildTsModalInfo(estado) {
+    var items = currentTsDetail.filter(function (t) { return t.estado === estado; });
+    var tablaHtml;
+    if (!items.length) {
+      tablaHtml = '<p class="mon-varinfo-table-note">Ningún tablespace está en este estado en este momento.</p>';
+    } else {
+      tablaHtml = '<div class="mon-table-wrap"><table class="mon-ip-table"><thead><tr><th>Tablespace</th><th>% de uso</th></tr></thead><tbody>' +
+        items.map(function (t) {
+          return '<tr><td>' + t.nombre + '</td><td>' + t.usedPct.toFixed(1) + '%</td></tr>';
+        }).join("") +
+        '</tbody></table></div>';
+    }
+    return {
+      titulo: 'Tablespaces en estado ' + '<span class="mon-badge ' + TS_ESTADO_CLS[estado] + '">' + TS_ESTADO_LABEL[estado] + '</span>',
+      desc: "% de uso = (espacio asignado − espacio libre) ÷ espacio asignado × 100, con datos de DBA_DATA_FILES y DBA_FREE_SPACE.",
+      tablaHtml: tablaHtml
+    };
+  }
+
+  function openTsInfo(estado) {
+    currentModalAlert = null;
+    var info = buildTsModalInfo(estado);
+    // El título trae un badge de color, así que se inyecta como HTML en
+    // vez de por renderInfoModal (que usa textContent para el título).
+    document.getElementById("mon-varinfo-title").innerHTML = info.titulo;
+    document.getElementById("mon-varinfo-desc").textContent = info.desc;
+    var formulaEl = document.getElementById("mon-varinfo-formula");
+    formulaEl.hidden = true;
+    formulaEl.textContent = "";
+    var tablaEl = document.getElementById("mon-varinfo-table");
+    tablaEl.innerHTML = info.tablaHtml;
+    tablaEl.hidden = false;
+    var backBtn = document.getElementById("mon-varinfo-back");
+    if (backBtn) backBtn.hidden = true;
+    var backdrop = document.getElementById("mon-varinfo-backdrop");
+    backdrop.hidden = false;
+    document.getElementById("mon-varinfo-close").focus();
   }
 
   function renderAll(ip, im, ia, isbd, alerts) {
     var m = ip.details;
-    var stISBD = statusFromScore(isbd);
+    var stOriginal = statusFromScore(isbd);
+    var stISBD = stOriginal;
     var hasCrit = alerts.some(function (a) { return a.nivel === "critico"; });
     if (hasCrit && isbd >= 60) stISBD = { key: "critico", label: "Crítico (alerta activa)", cls: "st-critico" };
 
+    // Índice de salud general: color y estado puramente según el puntaje
+    // (el semáforo "de libro"), sin considerar alertas activas.
     document.getElementById("mon-isbd-value").textContent = isbd.toFixed(2);
-    setBadge(document.getElementById("mon-isbd-status"), stISBD);
-    document.getElementById("mon-isbd-card").className = "mon-isbd " + stISBD.cls;
+    setBadge(document.getElementById("mon-isbd-status"), stOriginal);
+    document.getElementById("mon-isbd-card").className = "mon-isbd " + stOriginal.cls;
+
+    // Estado real: el mismo semáforo, pero ajustado por alertas activas
+    // (ej. una alerta crítica fuerza Crítico aunque el puntaje diera más),
+    // mostrado aparte junto con sus causas.
+    var realStatusEl = document.getElementById("mon-isbd-real-status");
+    if (realStatusEl) setBadge(realStatusEl, stISBD);
+
+    // Solo se refresca el contenido; la visibilidad la controla el botón
+    // "Ver causas" (wireIsbdCausasToggle), no cada actualización del monitor.
+    var causas = buildCausas(isbd, ip, im, ia, alerts, hasCrit, stOriginal, stISBD);
+    var causasListEl = document.getElementById("mon-isbd-causas-list");
+    if (causasListEl) {
+      causasListEl.innerHTML = causas.map(function (c) { return "<li>" + c + "</li>"; }).join("");
+    }
 
     var stIP = statusFromScore(ip.score);
     var stIM = statusFromScore(im.score);
@@ -379,25 +663,30 @@
       stat("Archivos inaccesibles", m.datafilesInaccessible, "datafilesInaccessible")
     ].join("");
 
+    // Detalle por tablespace, para el modal de cada bolita de color.
+    currentTsDetail = m.tablespacesDetail || [];
     document.getElementById("mon-ts-summary").innerHTML =
       '<div class="mon-ts-chips">' +
-        '<span class="mon-chip st-saludable">' + m.tablespacesNormal + " normales</span>" +
-        '<span class="mon-chip st-advertencia">' + m.tablespacesWarning + " advertencia</span>" +
-        '<span class="mon-chip st-critico">' + m.tablespacesCritical + " críticos</span>" +
+        tsChip("normal", "st-saludable", m.tablespacesNormal, "normales") +
+        tsChip("advertencia", "st-advertencia", m.tablespacesWarning, "advertencia") +
+        tsChip("critico", "st-critico", m.tablespacesCritical, "críticos") +
       "</div>";
 
     // Alertas
+    currentAlerts = alerts;
     document.getElementById("mon-alert-count").textContent = String(alerts.length);
     var list = document.getElementById("mon-alerts-list");
     if (!alerts.length) {
       list.innerHTML = '<li class="mon-alert-empty">Sin alertas. Todos los componentes en rangos aceptables.</li>';
     } else {
-      list.innerHTML = alerts.map(function (a) {
+      list.innerHTML = alerts.map(function (a, i) {
         var cls = a.nivel === "critico" ? "al-critico" : a.nivel === "alto" ? "al-alto" : "al-adv";
-        return '<li class="mon-alert-item ' + cls + '">' +
+        return '<li class="mon-alert-item mon-alert-item--clickable ' + cls + '" data-alert-index="' + i +
+          '" tabindex="0" role="button" aria-haspopup="dialog">' +
           '<div class="mon-alert-title"><strong>' + a.componente + "</strong> · " + a.variable + "</div>" +
           '<div class="mon-alert-desc">' + a.descripcion + "</div>" +
           '<div class="mon-alert-meta">Valor: ' + a.valor + " · Umbral: " + a.umbral + " · " + a.nivel.toUpperCase() + "</div>" +
+          '<div class="mon-alert-fecha">' + formatFechaHora(a.fecha) + "</div>" +
           "</li>";
       }).join("");
     }
@@ -475,17 +764,19 @@
       }
 
       var metrics = body.metrics;
+      // Instante en que se leyeron las métricas: se usa el del backend
+      // (measuredAt) cuando viene, para que la fecha/hora de cada alerta
+      // sea la del momento real de la lectura en Oracle, no la del
+      // navegador tras el viaje de red.
+      var ts = body.measuredAt ? new Date(body.measuredAt) : new Date();
       var ip = calcIP(metrics), im = calcIM(metrics), ia = calcIA(metrics);
       var isbd = calcISBD(ip, im, ia);
-      var alerts = buildAlerts(metrics, ip, im);
+      var alerts = buildAlerts(metrics, ip, im, ts);
       renderAll(ip, im, ia, isbd, alerts);
       renderThresholdsTable();
       drawHistory(pushHistory(isbd, ip, im, ia));
       showError(null);
 
-      
-
-      var ts = new Date();
       document.getElementById("mon-last-update").textContent =
         "Actualizado: " + ts.toLocaleTimeString("es-CR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
     } catch (err) {
@@ -534,6 +825,9 @@
     wireVarInfoContainer("mon-im-stats");
     wireVarInfoContainer("mon-ia-stats");
     wireVarInfoContainer("mon-bg-processes");
+    // El cuadro de pesos/fórmula del ISBD (mon-isbd-right) trae su propio
+    // data-var="semaforoEstados", así que se delega igual que las fichas.
+    wireVarInfoContainer("mon-isbd-right");
 
     // "Tablespaces" no es una ficha .mon-stat sino un encabezado de
     // subsección, así que se conecta directo en vez de vía
@@ -548,6 +842,60 @@
       });
     }
 
+    // Cada bolita de color dentro de "Tablespaces" abre su propio detalle
+    // por nombre de tablespace; stopPropagation evita que el clic también
+    // dispare el trigger general de arriba (mon-ts-info-trigger).
+    var tsSummary = document.getElementById("mon-ts-summary");
+    if (tsSummary) {
+      tsSummary.addEventListener("click", function (e) {
+        var chip = e.target.closest("[data-ts-estado]");
+        if (!chip) return;
+        e.stopPropagation();
+        openTsInfo(chip.getAttribute("data-ts-estado"));
+      });
+      tsSummary.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        var chip = e.target.closest("[data-ts-estado]");
+        if (!chip) return;
+        e.preventDefault();
+        e.stopPropagation();
+        openTsInfo(chip.getAttribute("data-ts-estado"));
+      });
+    }
+
+    // Alertas activas: cada <li> trae data-alert-index apuntando a
+    // currentAlerts (se recalcula en cada renderAll), así que se resuelve
+    // por índice en vez de por clave fija como el resto del catálogo.
+    var alertsList = document.getElementById("mon-alerts-list");
+    if (alertsList) {
+      alertsList.addEventListener("click", function (e) {
+        var item = e.target.closest("[data-alert-index]");
+        if (item) openAlertInfo(item.getAttribute("data-alert-index"));
+      });
+      alertsList.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        var item = e.target.closest("[data-alert-index]");
+        if (!item) return;
+        e.preventDefault();
+        openAlertInfo(item.getAttribute("data-alert-index"));
+      });
+    }
+
+    // Botón "Ver justificación de umbral" (inyectado dentro de
+    // mon-varinfo-table por buildAlertModalInfo) y flecha de volver.
+    var modalEl = document.getElementById("mon-varinfo-modal");
+    if (modalEl) {
+      modalEl.addEventListener("click", function (e) {
+        if (e.target.closest("[data-justificacion-trigger]")) showJustification();
+      });
+    }
+    var backBtn = document.getElementById("mon-varinfo-back");
+    if (backBtn) {
+      backBtn.addEventListener("click", function () {
+        if (currentModalAlert) renderInfoModal(buildAlertModalInfo(currentModalAlert), false);
+      });
+    }
+
     closeBtn.addEventListener("click", closeVarInfo);
     backdrop.addEventListener("click", function (e) {
       if (e.target === e.currentTarget) closeVarInfo();
@@ -555,6 +903,35 @@
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") closeVarInfo();
     });
+  }
+
+  // Botón "Ver causas": muestra/oculta la lista de causas del estado real
+  // sin depender de los refrescos del monitor (esos solo actualizan el
+  // texto interno, ver renderAll). Dentro, "Ver alertas →" lleva a la
+  // sección de alertas activas.
+  function wireIsbdCausas() {
+    var toggle = document.getElementById("mon-isbd-causas-toggle");
+    var causasEl = document.getElementById("mon-isbd-causas");
+    var pesosEl = document.getElementById("mon-isbd-right");
+    if (toggle && causasEl) {
+      toggle.addEventListener("click", function () {
+        var abierta = !causasEl.hidden;
+        causasEl.hidden = abierta;
+        toggle.setAttribute("aria-expanded", String(!abierta));
+        toggle.textContent = abierta ? "Ver causas" : "Ocultar causas";
+        // Al mostrar las causas se oculta el cuadro de pesos/fórmula del
+        // ISBD para dejarle espacio a la explicación; vuelve al cerrar.
+        if (pesosEl) pesosEl.hidden = !abierta;
+      });
+    }
+
+    var verAlertasBtn = document.getElementById("mon-isbd-ver-alertas");
+    var alertsPanel = document.getElementById("mon-alerts-panel");
+    if (verAlertasBtn && alertsPanel) {
+      verAlertasBtn.addEventListener("click", function () {
+        alertsPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
   }
 
   function init() {
@@ -565,6 +942,7 @@
     });
     window.addEventListener("resize", function () { drawHistory(loadHistory()); });
     initVarInfoModal();
+    wireIsbdCausas();
     collectAndRender();
     startAuto();
   }
