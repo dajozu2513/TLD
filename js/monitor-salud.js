@@ -561,6 +561,7 @@
     // Índice de salud general: color y estado puramente según el puntaje
     // (el semáforo "de libro"), sin considerar alertas activas.
     document.getElementById("mon-isbd-value").textContent = isbd.toFixed(2);
+ HEAD
     setBadge(document.getElementById("mon-isbd-status"), stOriginal);
     document.getElementById("mon-isbd-card").className = "mon-isbd " + stOriginal.cls;
 
@@ -577,6 +578,27 @@
     if (causasListEl) {
       causasListEl.innerHTML = causas.map(function (c) { return "<li>" + c + "</li>"; }).join("");
     }
+
+    setBadge(document.getElementById("mon-isbd-status"), stISBD);
+    document.getElementById("mon-isbd-card").className = "mon-isbd " + stISBD.cls;
+    // Mostrar Causas si hay alertas críticas
+var causasBox = document.getElementById("mon-isbd-causas");
+var causasList = document.getElementById("mon-isbd-causas-list");
+if (causasBox && causasList) {
+  var criticas = (alerts || []).filter(function (a) {
+    return a.nivel === "critico";
+  });
+  if (criticas.length > 0) {
+    causasList.innerHTML = criticas.map(function (a) {
+      return "<li>" + a.componente + " · " + a.variable + "</li>";
+    }).join("");
+    causasBox.hidden = false;
+  } else {
+    causasList.innerHTML = "";
+    causasBox.hidden = true;
+  }
+}
+
 
     var stIP = statusFromScore(ip.score);
     var stIM = statusFromScore(im.score);
