@@ -11,6 +11,21 @@ function initIsoCuestionario() {
     const API_BASE = "http://localhost:3000/api";
   let auditoriaActual = null;
 
+  // Progreso guardado localmente, para que el usuario pueda retomar el
+  // cuestionario más tarde sin perder lo ya respondido. Se guarda por
+  // sesión (correo si es usuario registrado, clave compartida si es
+  // invitado) ya que la "autenticación" del sitio vive en localStorage
+  // (ver js/auth.js).
+  function progresoStorageKey() {
+    let session = null;
+    try {
+      session = (typeof TLD_AUTH !== "undefined" && typeof TLD_AUTH.getSession === "function")
+        ? TLD_AUTH.getSession() : null;
+    } catch (err) { /* ignore */ }
+    const id = (session && session.type === "user" && session.email) ? session.email : "invitado";
+    return `tld_iso_progreso_${id}`;
+  }
+
   async function guardarEnBaseDeDatos(resultados) {
     try {
       const orgNombre = document.getElementById("isoq-f-org")?.value?.trim() || "Organización demo";
@@ -168,7 +183,8 @@ function initIsoCuestionario() {
       subEvaluado: (m,c) => `Madurez ${m}/5 · Cumplimiento ${c.toFixed(0)}%`,
       btnReset: "Limpiar respuestas",
       btnReporte: "Generar reporte ejecutivo",
-      btnExcel: "Descargar en Excel",
+      btnGuardarProgreso: "Guardar progreso",
+      progresoGuardadoMsg: "Progreso guardado. Puede continuar el cuestionario más tarde desde este mismo equipo.",
       reportEmpty: "Responda al menos un control para generar el reporte ejecutivo.",
       reportTitle: "Reporte ejecutivo de auditoría",
       reportArea: "Área", reportAuditor: "Auditor", reportFecha: "Fecha",
@@ -180,13 +196,6 @@ function initIsoCuestionario() {
       sectionTopMadurez: "Controles con menor nivel de madurez",
       madurezWord: "Madurez",
       sectionHeat: "Mapa de calor por control",
-      xlsxOrg: "Organización", xlsxArea: "Área evaluada", xlsxAuditor: "Auditor", xlsxFecha: "Fecha",
-      xlsxIndicador: "Indicador", xlsxValor: "Valor",
-      xlsxExpC: "Exposición Confidencialidad (%)", xlsxExpI: "Exposición Integridad (%)",
-      xlsxExpD: "Exposición Disponibilidad (%)", xlsxIndice: "Índice general de riesgo (%)",
-      xlsxHeaders: ["Código","Control","Dominio","Peso","C","I","D","Pregunta 1","Pregunta 2","Pregunta 3","Madurez (0-5)","Cumplimiento %","Exposición %","Riesgo","Observaciones"],
-      sheetResumen: "Resumen", sheetDetalle: "Detalle por control",
-      xlsxNoLib: "No se pudo cargar la librería de Excel. Verifique su conexión a internet.",
     },
     en: {
       navLink: "ISO Assessment",
@@ -221,7 +230,8 @@ function initIsoCuestionario() {
       subEvaluado: (m,c) => `Maturity ${m}/5 · Compliance ${c.toFixed(0)}%`,
       btnReset: "Clear answers",
       btnReporte: "Generate executive report",
-      btnExcel: "Download as Excel",
+      btnGuardarProgreso: "Save progress",
+      progresoGuardadoMsg: "Progress saved. You can continue the questionnaire later from this same device.",
       reportEmpty: "Answer at least one control to generate the executive report.",
       reportTitle: "Executive audit report",
       reportArea: "Area", reportAuditor: "Auditor", reportFecha: "Date",
@@ -233,13 +243,6 @@ function initIsoCuestionario() {
       sectionTopMadurez: "Controls with lowest maturity level",
       madurezWord: "Maturity",
       sectionHeat: "Risk heat map by control",
-      xlsxOrg: "Organization", xlsxArea: "Area assessed", xlsxAuditor: "Auditor", xlsxFecha: "Date",
-      xlsxIndicador: "Indicator", xlsxValor: "Value",
-      xlsxExpC: "Confidentiality exposure (%)", xlsxExpI: "Integrity exposure (%)",
-      xlsxExpD: "Availability exposure (%)", xlsxIndice: "Overall risk index (%)",
-      xlsxHeaders: ["Code","Control","Domain","Weight","C","I","D","Question 1","Question 2","Question 3","Maturity (0-5)","Compliance %","Exposure %","Risk","Observations"],
-      sheetResumen: "Summary", sheetDetalle: "Control detail",
-      xlsxNoLib: "Could not load the Excel library. Please check your internet connection.",
     }
   };
  
@@ -390,11 +393,72 @@ function initIsoCuestionario() {
     // Botones
     setText("isoq-btn-reset", S.btnReset);
     setText("isoq-btn-reporte", S.btnReporte);
-    setText("isoq-btn-excel", S.btnExcel);
+    setText("isoq-btn-guardar", S.btnGuardarProgreso);
   }
  
   applyTexts();
- 
+
+  // ---------- Progreso guardado (restaurar respuestas previas) ----------
+  function guardarProgreso() {
+    const respuestas = {};
+    CONTROLES.forEach(c => {
+      const card = container.querySelector(`.isoq-control-card[data-control-id="${c.id}"]`);
+      respuestas[c.id] = {
+        q: [1, 2, 3].map(i => {
+          const checked = card.querySelector(`input[name="c${c.id}_q${i}"]:checked`);
+          return checked ? checked.value : null;
+        }),
+        obs: card.querySelector("[data-obs]").value,
+      };
+    });
+
+    const datos = {
+      org: document.getElementById("isoq-f-org")?.value || "",
+      area: document.getElementById("isoq-f-area")?.value || "",
+      auditor: document.getElementById("isoq-f-auditor")?.value || "",
+      fecha: document.getElementById("isoq-f-fecha")?.value || "",
+      respuestas,
+      guardadoEn: new Date().toISOString(),
+    };
+
+    try {
+      localStorage.setItem(progresoStorageKey(), JSON.stringify(datos));
+      alert(STR[lang].progresoGuardadoMsg);
+    } catch (err) {
+      console.error("No se pudo guardar el progreso:", err);
+    }
+  }
+
+  function cargarProgreso() {
+    let datos = null;
+    try {
+      const raw = localStorage.getItem(progresoStorageKey());
+      if (raw) datos = JSON.parse(raw);
+    } catch (err) {
+      console.error("No se pudo leer el progreso guardado:", err);
+    }
+    if (!datos) return;
+
+    if (datos.org) document.getElementById("isoq-f-org").value = datos.org;
+    if (datos.area) document.getElementById("isoq-f-area").value = datos.area;
+    if (datos.auditor) document.getElementById("isoq-f-auditor").value = datos.auditor;
+    if (datos.fecha) document.getElementById("isoq-f-fecha").value = datos.fecha;
+
+    CONTROLES.forEach(c => {
+      const guardado = datos.respuestas && datos.respuestas[c.id];
+      if (!guardado) return;
+      const card = container.querySelector(`.isoq-control-card[data-control-id="${c.id}"]`);
+      (guardado.q || []).forEach((val, idx) => {
+        if (!val) return;
+        const input = card.querySelector(`input[name="c${c.id}_q${idx + 1}"][value="${val}"]`);
+        if (input) input.checked = true;
+      });
+      if (guardado.obs) card.querySelector("[data-obs]").value = guardado.obs;
+    });
+  }
+
+  cargarProgreso();
+
   // ---------- Cálculo en vivo ----------
   function calcular() {
     const S = STR[lang];
@@ -512,6 +576,7 @@ function initIsoCuestionario() {
     container.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
     container.querySelectorAll("textarea").forEach(t => t.value = "");
     document.getElementById("isoq-reporte")?.setAttribute("hidden", "");
+    try { localStorage.removeItem(progresoStorageKey()); } catch (err) { /* ignore */ }
     calcular();
   });
  
@@ -615,60 +680,8 @@ function initIsoCuestionario() {
     reportEl.scrollIntoView({ behavior: "smooth", block: "start" });
   }
  
-  // ---------- Exportar a Excel ----------
-  document.getElementById("isoq-btn-excel")?.addEventListener("click", () => {
-    const S = STR[lang];
-    if (typeof XLSX === "undefined") {
-      alert(S.xlsxNoLib);
-      return;
-    }
-    const resultados = calcular();
-    const evaluados = resultados.filter(r => r.estado === "evaluado");
- 
-    const expC = exposicionCID(evaluados, "C");
-    const expI = exposicionCID(evaluados, "I");
-    const expD = exposicionCID(evaluados, "D");
-    const validas = [expC, expI, expD].filter(v => v !== null);
-    const indiceGeneral = validas.length ? validas.reduce((a, b) => a + b, 0) / validas.length : null;
- 
-    const resumen = [
-      [S.xlsxOrg, document.getElementById("isoq-f-org")?.value || ""],
-      [S.xlsxArea, document.getElementById("isoq-f-area")?.value || ""],
-      [S.xlsxAuditor, document.getElementById("isoq-f-auditor")?.value || ""],
-      [S.xlsxFecha, document.getElementById("isoq-f-fecha")?.value || ""],
-      [],
-      [S.xlsxIndicador, S.xlsxValor],
-      [S.xlsxExpC, expC !== null ? expC.toFixed(1) : "N/A"],
-      [S.xlsxExpI, expI !== null ? expI.toFixed(1) : "N/A"],
-      [S.xlsxExpD, expD !== null ? expD.toFixed(1) : "N/A"],
-      [S.xlsxIndice, indiceGeneral !== null ? indiceGeneral.toFixed(1) : "N/A"],
-    ];
- 
-    const detalle = [S.xlsxHeaders];
-    resultados.forEach(r => {
-      const riesgoLabel = r.estado === "evaluado" ? riesgoDe(r.exposicion, lang).label
-        : r.estado === "no_aplica" ? S.statusNoAplica
-        : r.estado === "incompleto" ? S.statusIncompleto
-        : S.statusSinResponder;
-      detalle.push([
-        r.codigo, r.nombre[lang], dominioLabel(r.dominio, lang), r.peso,
-        r.cid.C ? "X" : "", r.cid.I ? "X" : "", r.cid.D ? "X" : "",
-        r.respuestas[0] || "", r.respuestas[1] || "", r.respuestas[2] || "",
-        r.madurez !== null ? r.madurez : "",
-        r.cumplimiento !== null ? r.cumplimiento.toFixed(0) : "",
-        r.exposicion !== null ? r.exposicion.toFixed(0) : "",
-        riesgoLabel,
-        r.observaciones
-      ]);
-    });
- 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumen), S.sheetResumen);
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(detalle), S.sheetDetalle);
- 
-    const org = (document.getElementById("isoq-f-org")?.value || "auditoria").replace(/[^a-z0-9]+/gi, "_");
-    XLSX.writeFile(wb, `cuestionario_iso27002_${org}.xlsx`);
-  });
+  // ---------- Guardar progreso ----------
+  document.getElementById("isoq-btn-guardar")?.addEventListener("click", () => guardarProgreso());
  
   // ---------- Sincronización con el selector de idioma del sitio ----------
   document.addEventListener("tld:langchange", (e) => {
