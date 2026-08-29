@@ -6,11 +6,13 @@ const pool = require("./db/pool");
 const controlesRouter = require("./routes/controles");
 const organizacionesRouter = require("./routes/organizaciones");
 const auditoriasRouter = require("./routes/auditorias");
+const adminRouter = require("./routes/admin");
+
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-
+app.use("/api/admin", adminRouter);
 app.get("/api/health", async (req, res) => {
   try {
     await pool.query("SELECT 1");
