@@ -9,3 +9,40 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
+
+  - name: tld-backend
+    type: web
+    runtime: node
+    rootDir: tld-backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: ADMIN_KEY
+        sync: false
+      - key: DEFAULT_AUDITOR_LOGIN
+        value: auditor.demo
+
+
+
+
+
+
+
+
+
+
+
+#services:
+ # - name: three-little-ducks
+  #  type: web
+   # runtime: static
+    #buildCommand: ""
+    #staticPublishPath: .
+    #pullRequestPreviewsEnabled: false
+    #routes:
+     # - type: rewrite
+     #   source: /*
+      #  destination: /index.html
+
